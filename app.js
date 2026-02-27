@@ -9,7 +9,6 @@
      history: [{at, by, action, notes}]
    }
 */
-
 document.addEventListener('DOMContentLoaded', () => {
   // ---------- Helpers ----------
   const $  = sel => document.querySelector(sel);
@@ -530,3 +529,4 @@ document.addEventListener('DOMContentLoaded', () => {
   populateApproverLabels({});
   renderTable();
 });
+
