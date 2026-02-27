@@ -6,10 +6,12 @@
   <title>Employee Offboarding – Request</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
+
 <body>
   <header class="app-header">
     <h1>Employee Offboarding</h1>
     <p class="subtitle">HR → Manager → Finance → IT → Admin → Final HR</p>
+
     <nav class="topnav">
       <button id="navNew" class="active">New Request</button>
       <button id="navDashboard">Dashboard</button>
@@ -17,36 +19,45 @@
   </header>
 
   <main class="container">
-    <!-- ========================= NEW REQUEST (HR) ========================= -->
+
+    <!-- ========================= NEW REQUEST VIEW ========================= -->
     <section id="view-new">
+
+      <!-- ----------------- HR Section ----------------- -->
       <section class="card" id="section-hr">
         <h2>HR: Create Offboarding Request</h2>
 
         <form id="offboardingForm" autocomplete="off" novalidate>
           <div class="grid">
+
             <div class="field">
               <label for="employeeName">Employee Name <span>*</span></label>
-              <input type="text" id="employeeName" name="employeeName" required/>
+              <input type="text" id="employeeName" required>
             </div>
+
             <div class="field">
               <label for="employeeId">Employee ID <span>*</span></label>
-              <input type="text" id="employeeId" name="employeeId" required/>
+              <input type="text" id="employeeId" required>
             </div>
+
             <div class="field">
               <label for="department">Department <span>*</span></label>
-              <input type="text" id="department" name="department" required/>
+              <input type="text" id="department" required>
             </div>
+
             <div class="field">
               <label for="jobTitle">Job Title <span>*</span></label>
-              <input type="text" id="jobTitle" name="jobTitle" required/>
+              <input type="text" id="jobTitle" required>
             </div>
+
             <div class="field">
               <label for="lastWorkingDay">Last Working Day <span>*</span></label>
-              <input type="date" id="lastWorkingDay" name="lastWorkingDay" required/>
+              <input type="date" id="lastWorkingDay" required>
             </div>
+
             <div class="field">
               <label for="reason">Reason for Exit <span>*</span></label>
-              <select id="reason" name="reason" required>
+              <select id="reason" required>
                 <option value="">Select…</option>
                 <option>Resignation</option>
                 <option>Termination</option>
@@ -55,37 +66,43 @@
                 <option>Other</option>
               </select>
             </div>
+
             <div class="field">
-              <label for="lineManager">Line Manager (email) <span>*</span></label>
-              <input type="email" id="lineManager" name="lineManager" placeholder="manager@yourcompany.com" required/>
+              <label for="lineManager">Line Manager Email <span>*</span></label>
+              <input type="email" id="lineManager" required>
             </div>
 
-            <!-- Approver Emails captured by HR at creation -->
+            <!-- APPROVER EMAILS -->
             <div class="field">
               <label for="financeApproverEmail">Finance Approver Email <span>*</span></label>
-              <input type="email" id="financeApproverEmail" name="financeApproverEmail" required/>
+              <input type="email" id="financeApproverEmail" required>
             </div>
+
             <div class="field">
               <label for="itApproverEmail">IT Approver Email <span>*</span></label>
-              <input type="email" id="itApproverEmail" name="itApproverEmail" required/>
+              <input type="email" id="itApproverEmail" required>
             </div>
+
             <div class="field">
               <label for="adminApproverEmail">Admin Approver Email <span>*</span></label>
-              <input type="email" id="adminApproverEmail" name="adminApproverEmail" required/>
+              <input type="email" id="adminApproverEmail" required>
             </div>
+
             <div class="field">
               <label for="hrFinalApproverEmail">Final HR Approver Email <span>*</span></label>
-              <input type="email" id="hrFinalApproverEmail" name="hrFinalApproverEmail" required/>
+              <input type="email" id="hrFinalApproverEmail" required>
             </div>
 
             <div class="field full">
-              <label for="assets">Company Assets Assigned (optional)</label>
-              <textarea id="assets" name="assets" rows="2" placeholder="Laptop, ID card, Mobile, VPN token, etc."></textarea>
+              <label for="assets">Company Assets (optional)</label>
+              <textarea id="assets" placeholder="Laptop, ID card, VPN token, etc." rows="2"></textarea>
             </div>
+
             <div class="field full">
-              <label for="comments">Comments</label>
-              <textarea id="comments" name="comments" rows="3"></textarea>
+              <label for="comments">HR Comments</label>
+              <textarea id="comments" rows="3"></textarea>
             </div>
+
           </div>
 
           <div class="actions">
@@ -97,179 +114,203 @@
         </form>
       </section>
 
-      <!-- ========================= WORKFLOW SECTIONS ========================= -->
-
-      <!-- Manager -->
+      <!-- ----------------- Manager Section ----------------- -->
       <section class="card role-only" data-role="manager" hidden>
         <h2>Line Manager / Dept Head</h2>
-        <div class="muted small">Approver: <span id="labelManagerEmail"></span></div>
+        <p class="small muted">Approver: <span id="labelManagerEmail"></span></p>
+
         <div class="grid">
           <div class="field full">
-            <label for="managerComments">Manager Comments <span>*</span></label>
-            <textarea id="managerComments" rows="3" required></textarea>
+            <label>Manager Comments <span>*</span></label>
+            <textarea id="managerComments" required></textarea>
           </div>
         </div>
+
         <div class="actions">
           <button id="btnManagerApprove" class="btn primary">Approve</button>
           <button id="btnManagerReject" class="btn danger">Reject</button>
         </div>
-        <p class="muted" id="managerMsg"></p>
+
+        <p id="managerMsg" class="muted"></p>
       </section>
 
-      <!-- Finance -->
+      <!-- ----------------- Finance Section ----------------- -->
       <section class="card role-only" data-role="finance" hidden>
         <h2>Finance Checklist</h2>
-        <div class="muted small">Approver: <span id="labelFinanceEmail"></span></div>
+        <p class="small muted">Approver: <span id="labelFinanceEmail"></span></p>
+
         <div class="grid">
           <div class="field">
-            <label for="pendingSalary">Pending Salary / Dues <span>*</span></label>
-            <input type="text" id="pendingSalary" required/>
+            <label>Pending Salary/Dues <span>*</span></label>
+            <input id="pendingSalary" required>
           </div>
+
           <div class="field">
-            <label for="recoveryAmount">Recovery Amount (₹) <span>*</span></label>
-            <input type="number" id="recoveryAmount" min="0" step="0.01" required/>
+            <label>Recovery Amount (₹) <span>*</span></label>
+            <input type="number" id="recoveryAmount" step="0.01" required>
           </div>
+
           <div class="field">
-            <label for="finalSettlement">Final Settlement Completed <span>*</span></label>
+            <label>Final Settlement Completed <span>*</span></label>
             <select id="finalSettlement" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field full">
-            <label for="financeComments">Finance Comments <span>*</span></label>
-            <textarea id="financeComments" rows="3" required></textarea>
+            <label>Finance Comments <span>*</span></label>
+            <textarea id="financeComments" required></textarea>
           </div>
         </div>
+
         <div class="actions">
           <button id="btnFinanceApprove" class="btn primary">Approve</button>
           <button id="btnFinanceReject" class="btn danger">Reject</button>
         </div>
-        <p class="muted" id="financeMsg"></p>
+
+        <p id="financeMsg" class="muted"></p>
       </section>
 
-      <!-- IT -->
+      <!-- ----------------- IT Section ----------------- -->
       <section class="card role-only" data-role="it" hidden>
         <h2>IT Checklist</h2>
-        <div class="muted small">Approver: <span id="labelITEmail"></span></div>
+        <p class="small muted">Approver: <span id="labelITEmail"></span></p>
+
         <div class="grid">
           <div class="field">
-            <label for="laptopReturned">Laptop Returned <span>*</span></label>
+            <label>Laptop Returned <span>*</span></label>
             <select id="laptopReturned" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field">
-            <label for="emailDisabled">Email Access Disabled <span>*</span></label>
+            <label>Email Access Disabled <span>*</span></label>
             <select id="emailDisabled" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field">
-            <label for="vpnDisabled">VPN Access Disabled <span>*</span></label>
+            <label>VPN Disabled <span>*</span></label>
             <select id="vpnDisabled" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field full">
-            <label for="otherSystems">Other System Access Removed (list)</label>
-            <textarea id="otherSystems" rows="2" placeholder="ERP, Git, HRMS, etc."></textarea>
+            <label>Other System Access</label>
+            <textarea id="otherSystems" placeholder="ERP, Git, HRMS..." rows="2"></textarea>
           </div>
+
           <div class="field full">
-            <label for="itComments">IT Comments <span>*</span></label>
-            <textarea id="itComments" rows="3" required></textarea>
+            <label>IT Comments <span>*</span></label>
+            <textarea id="itComments" required></textarea>
           </div>
         </div>
+
         <div class="actions">
           <button id="btnITApprove" class="btn primary">Approve</button>
           <button id="btnITReject" class="btn danger">Reject</button>
         </div>
-        <p class="muted" id="itMsg"></p>
+
+        <p id="itMsg" class="muted"></p>
       </section>
 
-      <!-- Admin -->
+      <!-- ----------------- Admin Section ----------------- -->
       <section class="card role-only" data-role="admin" hidden>
         <h2>Admin Checklist</h2>
-        <div class="muted small">Approver: <span id="labelAdminEmail"></span></div>
+        <p class="small muted">Approver: <span id="labelAdminEmail"></span></p>
+
         <div class="grid">
           <div class="field">
-            <label for="idCardReturned">ID Card Returned <span>*</span></label>
+            <label>ID Card Returned <span>*</span></label>
             <select id="idCardReturned" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field">
-            <label for="parkingDisabled">Parking Access Disabled <span>*</span></label>
+            <label>Parking Access Disabled <span>*</span></label>
             <select id="parkingDisabled" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field full">
-            <label for="deskCleared">Desk Cleared <span>*</span></label>
+            <label>Desk Cleared <span>*</span></label>
             <select id="deskCleared" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field full">
-            <label for="adminComments">Admin Comments <span>*</span></label>
-            <textarea id="adminComments" rows="3" required></textarea>
+            <label>Admin Comments <span>*</span></label>
+            <textarea id="adminComments" required></textarea>
           </div>
         </div>
+
         <div class="actions">
           <button id="btnAdminApprove" class="btn primary">Approve</button>
           <button id="btnAdminReject" class="btn danger">Reject</button>
         </div>
-        <p class="muted" id="adminMsg"></p>
+
+        <p id="adminMsg" class="muted"></p>
       </section>
 
-      <!-- Final HR -->
+      <!-- ----------------- Final HR Section ----------------- -->
       <section class="card role-only" data-role="hr-final" hidden>
         <h2>Final HR</h2>
-        <div class="muted small">Approver: <span id="labelHRFinalEmail"></span></div>
+        <p class="small muted">Approver: <span id="labelHRFinalEmail"></span></p>
+
         <div class="grid">
           <div class="field">
-            <label for="expLetter">Experience Letter Issued <span>*</span></label>
+            <label>Experience Letter Issued <span>*</span></label>
             <select id="expLetter" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field">
-            <label for="exitInterview">Exit Interview Completed <span>*</span></label>
+            <label>Exit Interview Completed <span>*</span></label>
             <select id="exitInterview" required>
               <option value="">Select…</option>
               <option>Yes</option>
               <option>No</option>
             </select>
           </div>
+
           <div class="field full">
-            <label for="finalHrComments">Final HR Comments <span>*</span></label>
-            <textarea id="finalHrComments" rows="3" required></textarea>
+            <label>Final HR Comments <span>*</span></label>
+            <textarea id="finalHrComments" required></textarea>
           </div>
         </div>
+
         <div class="actions">
           <button id="btnHRFinalApprove" class="btn primary">Approve & Close</button>
           <button id="btnHRFinalReject" class="btn danger">Reject</button>
         </div>
-        <p class="muted" id="hrFinalMsg"></p>
-        <!-- REMOVED: inline print button here; moved to a global panel -->
+
+        <p id="hrFinalMsg" class="muted"></p>
       </section>
 
-      <!-- Status -->
+      <!-- ----------------- Status Progress ----------------- -->
       <section class="card">
         <h2>Status</h2>
         <ol class="progress" id="statusProgress">
@@ -283,30 +324,33 @@
         </ol>
       </section>
 
-      <!-- Summary & Print Panel (shows on Completed or Rejected) -->
+      <!-- ----------------- Summary & Print ----------------- -->
       <section class="card" id="printPanel" hidden>
         <h2>Summary & Print</h2>
-        <p class="muted">The request is closed. You can print the summary below.</p>
-        <div class="actions">
-          <button id="btnPrintSummary" class="btn primary">Print Summary</button>
-        </div>
+        <p class="muted">This request is closed. You may print the full summary.</p>
+        <button id="btnPrintSummary" class="btn primary">Print Summary</button>
       </section>
+
     </section>
 
-    <!-- ========================= DASHBOARD ========================= -->
+    <!-- ========================= DASHBOARD VIEW ========================= -->
     <section id="view-dashboard" hidden>
       <section class="card">
         <h2>Approval Dashboard</h2>
+
         <div class="toolbar">
-          <input type="text" id="searchBox" placeholder="Search by name or ID…"/>
+          <input type="text" id="searchBox" placeholder="Search by name or ID">
           <select id="statusFilter">
             <option value="all">All</option>
-            <option value="open">Open (in progress)</option>
+            <option value="open">Open (In Progress)</option>
             <option value="completed">Completed</option>
             <option value="rejected">Rejected</option>
           </select>
-          <button id="btnRefresh" class="btn">Refresh</button>
-          <button id="btnNewFromDashboard" class="btn primary">New Request</button>
+
+          <button class="btn" id="btnRefresh">Refresh</button>
+          <button class="btn primary" id="btnNewFromDashboard">New Request</button>
+          <button class="btn" id="btnExport">Export JSON</button>
+          <button class="btn" id="btnImport">Import JSON</button>
         </div>
 
         <div class="table-wrap">
@@ -323,23 +367,28 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody><!-- rows injected by JS --></tbody>
+            <tbody>
+              <!-- Injected by JS -->
+            </tbody>
           </table>
         </div>
+
       </section>
     </section>
+
   </main>
 
   <footer class="footer">
-    <small>©ATA</small>
+    <small>© ATA</small>
   </footer>
 
   <script src="app.js"></script>
 
-  <!-- PRINT AREA (hidden; used by window.print) -->
+  <!-- ========================= PRINT AREA ========================= -->
   <div id="printArea" hidden>
     <div class="print-wrapper">
       <h1>Employee Offboarding Summary</h1>
+
       <p><strong>Request ID:</strong> <span id="p_id"></span></p>
       <p><strong>Employee Name:</strong> <span id="p_name"></span></p>
       <p><strong>Employee ID:</strong> <span id="p_empid"></span></p>
@@ -363,7 +412,7 @@
         <h3>Finance</h3>
         <p><strong>Email:</strong> <span id="p_fin_email"></span></p>
         <p><strong>Pending Salary:</strong> <span id="p_fin_salary"></span></p>
-        <p><strong>Recovery Amount:</strong> <span id="p_fin_recovery"></span></p>
+        <p><strong>Recovery:</strong> <span id="p_fin_recovery"></span></p>
         <p><strong>Comments:</strong> <span id="p_fin_comments"></span></p>
         <p><strong>Status:</strong> <span id="p_fin_status"></span></p>
       </div>
@@ -404,6 +453,6 @@
       <pre id="p_history"></pre>
     </div>
   </div>
+
 </body>
 </html>
-
