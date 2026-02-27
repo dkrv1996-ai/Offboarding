@@ -32,6 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idx >= 0) list[idx] = rec; else list.unshift(rec);
     saveAll(list);
   }
+  function deleteOne(id) {
+    const list = loadAll().filter(x => x.id !== id);
+    saveAll(list);
+  }
   function getOne(id) {
     return loadAll().find(x => x.id === id) || null;
   }
@@ -41,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const navDash = $('#navDashboard');
   const viewNew = $('#view-new');
   const viewDashboard = $('#view-dashboard');
+  const printPanel = $('#printPanel');
 
   function showNewView() {
     viewNew.hidden = false;
@@ -58,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   navNew.addEventListener('click', showNewView);
   navDash.addEventListener('click', showDashboardView);
-  $('#btnNewFromDashboard').addEventListener('click', showNewView);
+  $('#btnNewFromDashboard')?.addEventListener('click', showNewView);
 
   // ---------- Status / Steps ----------
   const steps = ['new','manager','finance','it','admin','hr-final','completed'];
@@ -88,11 +93,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetWorkflowUI() {
     // Hide all role sections
     $$('.role-only').forEach(sec => sec.hidden = true);
+    // Hide print panel
+    if (printPanel) printPanel.hidden = true;
     // Clear messages
     ['#managerMsg','#financeMsg','#itMsg','#adminMsg','#hrFinalMsg','#formMsg']
       .forEach(sel => { const el = $(sel); if (el) el.textContent = ''; });
     // Reset form enabled
     Array.from($('#offboardingForm').elements).forEach(el => el.disabled = false);
+  }
+
+  function clearHRForm() {
+    $('#offboardingForm').reset();
+    Array.from($('#offboardingForm').elements).forEach(el => el.disabled = false);
+    $('#formMsg').textContent = '';
+    updateProgress(0);
   }
 
   function populateApproverLabels(rec) {
@@ -112,14 +126,21 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'in-progress';
     saveOne(currentRecord);
 
-    // Hide all role sections and show the right one
+    // Hide all role sections
     $$('.role-only').forEach(sec => sec.hidden = true);
+    // Show correct section or print panel
     switch (steps[stepIndex]) {
       case 'manager':  $('[data-role="manager"]').hidden = false; break;
       case 'finance':  $('[data-role="finance"]').hidden = false; break;
       case 'it':       $('[data-role="it"]').hidden = false; break;
       case 'admin':    $('[data-role="admin"]').hidden = false; break;
       case 'hr-final': $('[data-role="hr-final"]').hidden = false; break;
+      case 'completed':
+        if (printPanel) {
+          printPanel.hidden = false;
+          printPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        break;
       default: break;
     }
 
@@ -151,15 +172,18 @@ document.addEventListener('DOMContentLoaded', () => {
     populateApproverLabels(rec);
     updateProgress(rec.currentStep);
 
-    // Show appropriate role section
+    // Show appropriate section or print panel
     $$('.role-only').forEach(sec => sec.hidden = true);
-    switch (steps[rec.currentStep]) {
-      case 'manager':  $('[data-role="manager"]').hidden = false; break;
-      case 'finance':  $('[data-role="finance"]').hidden = false; break;
-      case 'it':       $('[data-role="it"]').hidden = false; break;
-      case 'admin':    $('[data-role="admin"]').hidden = false; break;
-      case 'hr-final': $('[data-role="hr-final"]').hidden = false; break;
-      default: break;
+    if (steps[rec.currentStep] === 'completed' || rec.status === 'completed' || rec.status === 'rejected') {
+      if (printPanel) printPanel.hidden = false;
+    } else {
+      switch (steps[rec.currentStep]) {
+        case 'manager':  $('[data-role="manager"]').hidden = false; break;
+        case 'finance':  $('[data-role="finance"]').hidden = false; break;
+        case 'it':       $('[data-role="it"]').hidden = false; break;
+        case 'admin':    $('[data-role="admin"]').hidden = false; break;
+        case 'hr-final': $('[data-role="hr-final"]').hidden = false; break;
+      }
     }
 
     showNewView();
@@ -229,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btnManagerApprove').addEventListener('click', () => {
     const notes = $('#managerComments').value.trim();
     if (!notes) { $('#managerMsg').textContent = 'Manager comments are required.'; return; }
+    currentRecord.data.managerComments = notes;
     addHistory('Manager', 'Approved', notes);
     saveOne(currentRecord);
     $('#managerMsg').textContent = '✔ Manager approved. Moving to Finance.';
@@ -236,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('#btnManagerReject').addEventListener('click', () => {
     const notes = $('#managerComments').value.trim() || '(No comments)';
+    currentRecord.data.managerComments = notes;
     addHistory('Manager', 'Rejected', notes);
     currentRecord.status = 'rejected';
     saveOne(currentRecord);
@@ -260,6 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('#btnFinanceReject').addEventListener('click', () => {
     const financeComments = $('#financeComments').value.trim() || '(No comments)';
+    Object.assign(currentRecord.data, { financeComments });
     addHistory('Finance', 'Rejected', financeComments);
     currentRecord.status = 'rejected';
     saveOne(currentRecord);
@@ -285,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('#btnITReject').addEventListener('click', () => {
     const itComments = $('#itComments').value.trim() || '(No comments)';
+    Object.assign(currentRecord.data, { itComments });
     addHistory('IT', 'Rejected', itComments);
     currentRecord.status = 'rejected';
     saveOne(currentRecord);
@@ -309,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('#btnAdminReject').addEventListener('click', () => {
     const adminComments = $('#adminComments').value.trim() || '(No comments)';
+    Object.assign(currentRecord.data, { adminComments });
     addHistory('Admin', 'Rejected', adminComments);
     currentRecord.status = 'rejected';
     saveOne(currentRecord);
@@ -329,20 +358,76 @@ document.addEventListener('DOMContentLoaded', () => {
     currentRecord.status = 'completed';
     saveOne(currentRecord);
     $('#hrFinalMsg').textContent = '🎉 Offboarding completed successfully.';
-    goToStep(6);
+    goToStep(6); // this will show the print panel
   });
   $('#btnHRFinalReject').addEventListener('click', () => {
     const finalHrComments = $('#finalHrComments').value.trim() || '(No comments)';
+    Object.assign(currentRecord.data, { finalHrComments });
     addHistory('Final HR', 'Rejected', finalHrComments);
     currentRecord.status = 'rejected';
     saveOne(currentRecord);
     $('#hrFinalMsg').textContent = '❌ Rejected by Final HR. Flow stopped.';
-    goToStep(6);
-});
-     $('#btnHRFinalApprove').addEventListener('click', () => {
-  // existing approve logic…
-  document.getElementById('printButtonContainer').hidden = false;
+    goToStep(6); // also show print panel if you want to allow print on rejected
+  });
 
+  // ---------- Print Summary ----------
+  $('#btnPrintSummary').addEventListener('click', () => {
+    if (!currentRecord) return;
+    const d = currentRecord.data;
+
+    const P = (id) => document.getElementById(id);
+
+    // Basic employee details
+    P('p_id').textContent    = currentRecord.id;
+    P('p_name').textContent  = d.employeeName || '';
+    P('p_empid').textContent = d.employeeId || '';
+    P('p_dept').textContent  = d.department || '';
+    P('p_job').textContent   = d.jobTitle || '';
+    P('p_lwd').textContent   = d.lastWorkingDay || '';
+    P('p_reason').textContent= d.reason || '';
+
+    // Manager
+    P('p_mgr_email').textContent    = d.lineManagerEmail || '';
+    P('p_mgr_comments').textContent = d.managerComments || '';
+    P('p_mgr_status').textContent   = currentRecord.history.find(h => h.by === 'Manager')?.action || 'Pending';
+
+    // Finance
+    P('p_fin_email').textContent    = d.financeApproverEmail || '';
+    P('p_fin_salary').textContent   = d.pendingSalary || '';
+    P('p_fin_recovery').textContent = d.recoveryAmount || '';
+    P('p_fin_comments').textContent = d.financeComments || '';
+    P('p_fin_status').textContent   = currentRecord.history.find(h => h.by === 'Finance')?.action || 'Pending';
+
+    // IT
+    P('p_it_email').textContent     = d.itApproverEmail || '';
+    P('p_it_laptop').textContent    = d.laptopReturned || '';
+    P('p_it_mail').textContent      = d.emailDisabled || '';
+    P('p_it_vpn').textContent       = d.vpnDisabled || '';
+    P('p_it_other').textContent     = d.otherSystems || '';
+    P('p_it_comments').textContent  = d.itComments || '';
+    P('p_it_status').textContent    = currentRecord.history.find(h => h.by === 'IT')?.action || 'Pending';
+
+    // Admin
+    P('p_admin_email').textContent  = d.adminApproverEmail || '';
+    P('p_admin_idcard').textContent = d.idCardReturned || '';
+    P('p_admin_parking').textContent= d.parkingDisabled || '';
+    P('p_admin_desk').textContent   = d.deskCleared || '';
+    P('p_admin_comments').textContent= d.adminComments || '';
+    P('p_admin_status').textContent = currentRecord.history.find(h => h.by === 'Admin')?.action || 'Pending';
+
+    // Final HR
+    P('p_hr_email').textContent     = d.hrFinalApproverEmail || '';
+    P('p_hr_exp').textContent       = d.expLetter || '';
+    P('p_hr_exit').textContent      = d.exitInterview || '';
+    P('p_hr_comments').textContent  = d.finalHrComments || '';
+    P('p_hr_status').textContent    = currentRecord.status || '';
+
+    // History
+    P('p_history').textContent = currentRecord.history
+      .map(h => `${fmtDT(h.at)} | ${h.by}: ${h.action}\n${h.notes}`)
+      .join("\n\n");
+
+    window.print();
   });
 
   // ---------- Dashboard Table ----------
@@ -397,7 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
           </span>
         </td>
         <td>${fmtDT(rec.updatedAt)}</td>
-        <td><button class="btn sm" data-open="${rec.id}">Open</button></td>
+        <td>
+          <button class="btn sm" data-open="${rec.id}">Open</button>
+          <button class="btn sm danger" data-del="${rec.id}">Delete</button>
+        </td>
       `;
 
       tbody.appendChild(tr);
@@ -413,6 +501,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+
+    // Wire "Delete" buttons
+    tbody.querySelectorAll('button[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-del');
+        const rec = getOne(id);
+        if (!rec) return;
+        const ok = confirm(`Delete request ${id} for ${rec.data.employeeName}? This cannot be undone.`);
+        if (!ok) return;
+
+        // If deleting the currently opened record, clear context
+        if (currentRecord && currentRecord.id === id) {
+          currentRecord = null;
+          clearHRForm();
+          resetWorkflowUI();
+        }
+
+        deleteOne(id);
+        renderTable();
+      });
+    });
   }
 
   // ---------- Initial UI ----------
@@ -420,61 +529,4 @@ document.addEventListener('DOMContentLoaded', () => {
   updateProgress(0);
   populateApproverLabels({});
   renderTable();
-});
-$('#btnPrintSummary').addEventListener('click', () => {
-  if (!currentRecord) return;
-
-  let d = currentRecord.data;
-
-  // Basic employee details
-  p_id.textContent = currentRecord.id;
-  p_name.textContent = d.employeeName;
-  p_empid.textContent = d.employeeId;
-  p_dept.textContent = d.department;
-  p_job.textContent = d.jobTitle;
-  p_lwd.textContent = d.lastWorkingDay;
-  p_reason.textContent = d.reason;
-
-  // Manager
-  p_mgr_email.textContent = d.lineManagerEmail;
-  p_mgr_comments.textContent = d.managerComments || "";
-  p_mgr_status.textContent = currentRecord.history.find(h => h.by === 'Manager')?.action || "Pending";
-
-  // Finance
-  p_fin_email.textContent = d.financeApproverEmail;
-  p_fin_salary.textContent = d.pendingSalary || "";
-  p_fin_recovery.textContent = d.recoveryAmount || "";
-  p_fin_comments.textContent = d.financeComments || "";
-  p_fin_status.textContent = currentRecord.history.find(h => h.by === 'Finance')?.action || "Pending";
-
-  // IT
-  p_it_email.textContent = d.itApproverEmail;
-  p_it_laptop.textContent = d.laptopReturned || "";
-  p_it_mail.textContent = d.emailDisabled || "";
-  p_it_vpn.textContent = d.vpnDisabled || "";
-  p_it_other.textContent = d.otherSystems || "";
-  p_it_comments.textContent = d.itComments || "";
-  p_it_status.textContent = currentRecord.history.find(h => h.by === 'IT')?.action || "Pending";
-
-  // Admin
-  p_admin_email.textContent = d.adminApproverEmail;
-  p_admin_idcard.textContent = d.idCardReturned || "";
-  p_admin_parking.textContent = d.parkingDisabled || "";
-  p_admin_desk.textContent = d.deskCleared || "";
-  p_admin_comments.textContent = d.adminComments || "";
-  p_admin_status.textContent = currentRecord.history.find(h => h.by === 'Admin')?.action || "Pending";
-
-  // Final HR
-  p_hr_email.textContent = d.hrFinalApproverEmail;
-  p_hr_exp.textContent = d.expLetter || "";
-  p_hr_exit.textContent = d.exitInterview || "";
-  p_hr_comments.textContent = d.finalHrComments || "";
-  p_hr_status.textContent = currentRecord.status;
-
-  // History
-  p_history.textContent = currentRecord.history
-    .map(h => `${h.at} | ${h.by}: ${h.action}\n${h.notes}`)
-    .join("\n\n");
-
-  window.print();
 });
