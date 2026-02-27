@@ -1,0 +1,26 @@
+name: Finance Approval
+description: Finance approval for offboarding.
+title: "Finance Approval - {{ offboard_id }}"
+labels: ["approval", "finance"]
+body:
+  - type: input
+    id: offboard_id
+    attributes:
+      label: Offboarding Ticket Number
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Finance Decision
+      options:
+        - Approve
+        - Reject
+    validations:
+      required: true
+
+  - type: textarea
+    id: comment
+    attributes:
+      label: Finance Comments
