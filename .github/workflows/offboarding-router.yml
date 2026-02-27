@@ -1,108 +1,167 @@
 generate_pdf:
     needs: route
-    if: ${{ contains(github.event.client_payload.stage, 'hr-final') && github.event.action == 'approved' }}
+    if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'offboarding.approved' && github.event.client_payload.stage == 'hr-final' }}
     runs-on: ubuntu-latest
+
+    env:
+      OWNER: ${{ github.repository_owner }}
+      REPO: ${{ github.event.repository.name }}
+      ISSUE: ${{ github.event.client_payload.issue_number }}
+      DEFAULT_BRANCH: main   # change if your default branch is different
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed if we commit the PDF back
 
       - name: Install Python + ReportLab
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3 python3-pip
-          pip3 install reportlab
+          python3 --version || sudo apt-get update && sudo apt-get install -y python3
+          pip3 --version || sudo apt-get install -y python3-pip
+          pip3 install --no-input reportlab
 
-      - name: Fetch Issue Details
-        id: issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const issue_number = Number(process.env.ISSUE);
-            const issue = await github.rest.issues.get({
-              owner: process.env.OWNER,
-              repo: process.env.REPO,
-              issue_number
-            });
-
-            const comments = await github.rest.issues.listComments({
-              owner: process.env.OWNER,
-              repo: process.env.REPO,
-              issue_number
-            });
-
-            core.setOutput("title", issue.data.title);
-            core.setOutput("body", issue.data.body);
-            core.setOutput("comments", JSON.stringify(comments.data));
-          env:
-            ISSUE: ${{ github.event.client_payload.issue_number }}
-
-      - name: Create PDF
-        run: |
-          python3 <<EOF
-          from reportlab.pdfgen import canvas
-          from reportlab.lib.pagesizes import letter
-          import json
-
-          title = """${{ steps.issue.outputs.title }}"""
-          body = """${{ steps.issue.outputs.body }}"""
-          comments = json.loads("""${{ steps.issue.outputs.comments }}""")
-
-          c = canvas.Canvas("Offboarding-Summary.pdf", pagesize=letter)
-          width, height = letter
-          y = height - 50
-
-          c.setFont("Helvetica-Bold", 16)
-          c.drawString(50, y, "Employee Offboarding Summary")
-          y -= 30
-
-          c.setFont("Helvetica", 12)
-          c.drawString(50, y, title)
-          y -= 20
-
-          c.setFont("Helvetica", 10)
-          for line in body.split("\\n"):
-            c.drawString(50, y, line)
-            y -= 15
-
-          y -= 20
-          c.setFont("Helvetica-Bold", 12)
-          c.drawString(50, y, "Approvals & Comments:")
-          y -= 20
-
-          c.setFont("Helvetica", 10)
-          for cmt in comments:
-            txt = f"[{cmt['user']['login']}] {cmt['created_at']}"
-            c.drawString(50, y, txt)
-            y -= 15
-            for line in cmt['body'].split("\\n"):
-              c.drawString(70, y, line)
-              y -= 12
-            y -= 10
-
-          c.save()
-          EOF
-
-      - name: Upload PDF Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Offboarding-Summary
-          path: Offboarding-Summary.pdf
-
-      - name: Attach PDF to Issue
+      - name: Fetch issue + comments into files
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const issue_number = Number(process.env.ISSUE);
-            const pdf = fs.readFileSync("Offboarding-Summary.pdf").toString("base64");
 
+            const { data: issue } = await github.rest.issues.get({
+              owner: process.env.OWNER,
+              repo: process.env.REPO,
+              issue_number
+            });
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: process.env.OWNER,
+              repo: process.env.REPO,
+              issue_number,
+              per_page: 100
+            });
+
+            fs.writeFileSync('issue.json', JSON.stringify(issue, null, 2));
+            fs.writeFileSync('comments.json', JSON.stringify(comments, null, 2));
+
+      - name: Create PDF
+        run: |
+          python3 <<'EOF'
+          import json
+          from reportlab.pdfgen import canvas
+          from reportlab.lib.pagesizes import A4
+          from reportlab.lib.units import mm
+
+          # Load data
+          issue = json.load(open("issue.json", "r", encoding="utf-8"))
+          comments = json.load(open("comments.json", "r", encoding="utf-8"))
+
+          # Extract body safely
+          title = issue.get("title", "Offboarding")
+          body = issue.get("body", "") or ""
+
+          # Prepare canvas
+          c = canvas.Canvas("Offboarding-Summary.pdf", pagesize=A4)
+          width, height = A4
+          x_margin, y = 20*mm, height - 20*mm
+
+          def draw_wrapped(text, start_x, start_y, max_width, line_height, font=("Helvetica", 10)):
+            c.setFont(*font)
+            import textwrap
+            wrap = textwrap.wrap(text, width=int(max_width/5.5))  # rough wrap factor
+            y = start_y
+            for ln in wrap:
+              c.drawString(start_x, y, ln)
+              y -= line_height
+            return y
+
+          # Header
+          c.setFont("Helvetica-Bold", 16)
+          c.drawString(x_margin, y, "Employee Offboarding Summary")
+          y -= 12*mm
+
+          # Title
+          c.setFont("Helvetica-Bold", 12)
+          y = draw_wrapped(title, x_margin, y, width - 2*x_margin, 5*mm, ("Helvetica-Bold", 12)) - 4*mm
+
+          # Body (employee details captured in issue body)
+          c.setFont("Helvetica-Bold", 11)
+          c.drawString(x_margin, y, "Employee & Request Details")
+          y -= 6*mm
+          c.setFont("Helvetica", 10)
+          for line in body.splitlines():
+            if not line.strip():
+              y -= 3*mm
+              continue
+            c.drawString(x_margin, y, line)
+            y -= 5*mm
+            if y < 25*mm:  # new page if needed
+              c.showPage()
+              y = height - 20*mm
+
+          # Approvals Section
+          if y < 35*mm:
+            c.showPage()
+            y = height - 20*mm
+
+          c.setFont("Helvetica-Bold", 11)
+          c.drawString(x_margin, y, "Approvals & Comments")
+          y -= 6*mm
+          c.setFont("Helvetica", 10)
+
+          for cmt in comments:
+            header = f"[{cmt.get('user',{}).get('login','unknown')}]  {cmt.get('created_at','')}"
+            c.drawString(x_margin, y, header)
+            y -= 5*mm
+            text = cmt.get('body','')
+            for ln in text.splitlines():
+              c.drawString(x_margin+8*mm, y, ln)
+              y -= 5*mm
+              if y < 25*mm:
+                c.showPage()
+                y = height - 20*mm
+            y -= 3*mm
+            if y < 25*mm:
+              c.showPage()
+              y = height - 20*mm
+
+          # Footer
+          if y < 25*mm:
+            c.showPage()
+            y = height - 20*mm
+          c.setFont("Helvetica", 9)
+          c.drawString(x_margin, 15*mm, "Generated by GitHub Actions – Offboarding Automation")
+          c.save()
+          EOF
+
+      # OPTION 1: Commit PDF into repo for a permanent link (recommended)
+      - name: Store PDF in records/ and commit
+        run: |
+          mkdir -p records
+          cp Offboarding-Summary.pdf "records/offboarding-${ISSUE}.pdf"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add records/offboarding-${ISSUE}.pdf
+          git commit -m "Add offboarding summary PDF for #${ISSUE}" || echo "No changes to commit"
+          git push origin ${DEFAULT_BRANCH}
+
+      - name: Comment with PDF link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = Number(process.env.ISSUE);
+            // Link to the committed file on default branch
+            const url = `https://raw.githubusercontent.com/${process.env.OWNER}/${process.env.REPO}/${process.env.DEFAULT_BRANCH}/records/offboarding-${process.env.ISSUE}.pdf`;
             await github.rest.issues.createComment({
               owner: process.env.OWNER,
               repo: process.env.REPO,
               issue_number,
-              body: "📄 **Offboarding Summary PDF Attached**"
-            });
+              body: `📄 **Offboarding Summary PDF**\n\nDownload & print: ${url}`
+            })
 
-          env:
-            ISSUE: ${{ github.event.client_payload.issue_number }}
+      # OPTION 2 (optional): also upload as an artifact
+      - name: Upload PDF Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Offboarding-Summary-${{ env.ISSUE }}
+          path: Offboarding-Summary.pdf
