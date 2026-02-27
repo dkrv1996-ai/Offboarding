@@ -266,9 +266,7 @@
           <button id="btnHRFinalReject" class="btn danger">Reject</button>
         </div>
         <p class="muted" id="hrFinalMsg"></p>
-        <div class="actions" id="printButtonContainer" hidden>
-  <button id="btnPrintSummary" class="btn primary">Print Summary</button>
-</div>
+        <!-- REMOVED: inline print button here; moved to a global panel -->
       </section>
 
       <!-- Status -->
@@ -283,6 +281,15 @@
           <li>Pending Final HR Approval</li>
           <li>Completed</li>
         </ol>
+      </section>
+
+      <!-- Summary & Print Panel (shows on Completed or Rejected) -->
+      <section class="card" id="printPanel" hidden>
+        <h2>Summary & Print</h2>
+        <p class="muted">The request is closed. You can print the summary below.</p>
+        <div class="actions">
+          <button id="btnPrintSummary" class="btn primary">Print Summary</button>
+        </div>
       </section>
     </section>
 
@@ -328,74 +335,74 @@
   </footer>
 
   <script src="app.js"></script>
-<div id="printArea" hidden>
-  <div class="print-wrapper">
-    <h1>Employee Offboarding Summary</h1>
-    <p><strong>Request ID:</strong> <span id="p_id"></span></p>
-    <p><strong>Employee Name:</strong> <span id="p_name"></span></p>
-    <p><strong>Employee ID:</strong> <span id="p_empid"></span></p>
-    <p><strong>Department:</strong> <span id="p_dept"></span></p>
-    <p><strong>Job Title:</strong> <span id="p_job"></span></p>
-    <p><strong>Last Working Day:</strong> <span id="p_lwd"></span></p>
-    <p><strong>Reason:</strong> <span id="p_reason"></span></p>
 
-    <hr/>
+  <!-- PRINT AREA (hidden; used by window.print) -->
+  <div id="printArea" hidden>
+    <div class="print-wrapper">
+      <h1>Employee Offboarding Summary</h1>
+      <p><strong>Request ID:</strong> <span id="p_id"></span></p>
+      <p><strong>Employee Name:</strong> <span id="p_name"></span></p>
+      <p><strong>Employee ID:</strong> <span id="p_empid"></span></p>
+      <p><strong>Department:</strong> <span id="p_dept"></span></p>
+      <p><strong>Job Title:</strong> <span id="p_job"></span></p>
+      <p><strong>Last Working Day:</strong> <span id="p_lwd"></span></p>
+      <p><strong>Reason:</strong> <span id="p_reason"></span></p>
 
-    <h2>Approvals</h2>
+      <hr/>
 
-    <div class="stage">
-      <h3>Manager</h3>
-      <p><strong>Email:</strong> <span id="p_mgr_email"></span></p>
-      <p><strong>Comments:</strong> <span id="p_mgr_comments"></span></p>
-      <p><strong>Status:</strong> <span id="p_mgr_status"></span></p>
+      <h2>Approvals</h2>
+
+      <div class="stage">
+        <h3>Manager</h3>
+        <p><strong>Email:</strong> <span id="p_mgr_email"></span></p>
+        <p><strong>Comments:</strong> <span id="p_mgr_comments"></span></p>
+        <p><strong>Status:</strong> <span id="p_mgr_status"></span></p>
+      </div>
+
+      <div class="stage">
+        <h3>Finance</h3>
+        <p><strong>Email:</strong> <span id="p_fin_email"></span></p>
+        <p><strong>Pending Salary:</strong> <span id="p_fin_salary"></span></p>
+        <p><strong>Recovery Amount:</strong> <span id="p_fin_recovery"></span></p>
+        <p><strong>Comments:</strong> <span id="p_fin_comments"></span></p>
+        <p><strong>Status:</strong> <span id="p_fin_status"></span></p>
+      </div>
+
+      <div class="stage">
+        <h3>IT</h3>
+        <p><strong>Email:</strong> <span id="p_it_email"></span></p>
+        <p><strong>Laptop Returned:</strong> <span id="p_it_laptop"></span></p>
+        <p><strong>Email Disabled:</strong> <span id="p_it_mail"></span></p>
+        <p><strong>VPN Disabled:</strong> <span id="p_it_vpn"></span></p>
+        <p><strong>Other Systems:</strong> <span id="p_it_other"></span></p>
+        <p><strong>Comments:</strong> <span id="p_it_comments"></span></p>
+        <p><strong>Status:</strong> <span id="p_it_status"></span></p>
+      </div>
+
+      <div class="stage">
+        <h3>Admin</h3>
+        <p><strong>Email:</strong> <span id="p_admin_email"></span></p>
+        <p><strong>ID Card Returned:</strong> <span id="p_admin_idcard"></span></p>
+        <p><strong>Parking Disabled:</strong> <span id="p_admin_parking"></span></p>
+        <p><strong>Desk Cleared:</strong> <span id="p_admin_desk"></span></p>
+        <p><strong>Comments:</strong> <span id="p_admin_comments"></span></p>
+        <p><strong>Status:</strong> <span id="p_admin_status"></span></p>
+      </div>
+
+      <div class="stage">
+        <h3>Final HR</h3>
+        <p><strong>Email:</strong> <span id="p_hr_email"></span></p>
+        <p><strong>Experience Letter:</strong> <span id="p_hr_exp"></span></p>
+        <p><strong>Exit Interview:</strong> <span id="p_hr_exit"></span></p>
+        <p><strong>Comments:</strong> <span id="p_hr_comments"></span></p>
+        <p><strong>Final Status:</strong> <span id="p_hr_status"></span></p>
+      </div>
+
+      <hr/>
+
+      <h2>Timeline / Log</h2>
+      <pre id="p_history"></pre>
     </div>
-
-    <div class="stage">
-      <h3>Finance</h3>
-      <p><strong>Email:</strong> <span id="p_fin_email"></span></p>
-      <p><strong>Pending Salary:</strong> <span id="p_fin_salary"></span></p>
-      <p><strong>Recovery Amount:</strong> <span id="p_fin_recovery"></span></p>
-      <p><strong>Comments:</strong> <span id="p_fin_comments"></span></p>
-      <p><strong>Status:</strong> <span id="p_fin_status"></span></p>
-    </div>
-
-    <div class="stage">
-      <h3>IT</h3>
-      <p><strong>Email:</strong> <span id="p_it_email"></span></p>
-      <p><strong>Laptop Returned:</strong> <span id="p_it_laptop"></span></p>
-      <p><strong>Email Disabled:</strong> <span id="p_it_mail"></span></p>
-      <p><strong>VPN Disabled:</strong> <span id="p_it_vpn"></span></p>
-      <p><strong>Other Systems:</strong> <span id="p_it_other"></span></p>
-      <p><strong>Comments:</strong> <span id="p_it_comments"></span></p>
-      <p><strong>Status:</strong> <span id="p_it_status"></span></p>
-    </div>
-
-    <div class="stage">
-      <h3>Admin</h3>
-      <p><strong>Email:</strong> <span id="p_admin_email"></span></p>
-      <p><strong>ID Card Returned:</strong> <span id="p_admin_idcard"></span></p>
-      <p><strong>Parking Disabled:</strong> <span id="p_admin_parking"></span></p>
-      <p><strong>Desk Cleared:</strong> <span id="p_admin_desk"></span></p>
-      <p><strong>Comments:</strong> <span id="p_admin_comments"></span></p>
-      <p><strong>Status:</strong> <span id="p_admin_status"></span></p>
-    </div>
-
-    <div class="stage">
-      <h3>Final HR</h3>
-      <p><strong>Email:</strong> <span id="p_hr_email"></span></p>
-      <p><strong>Experience Letter:</strong> <span id="p_hr_exp"></span></p>
-      <p><strong>Exit Interview:</strong> <span id="p_hr_exit"></span></p>
-      <p><strong>Comments:</strong> <span id="p_hr_comments"></span></p>
-      <p><strong>Final Status:</strong> <span id="p_hr_status"></span></p>
-    </div>
-
-    <hr/>
-
-    <h2>Timeline / Log</h2>
-    <pre id="p_history"></pre>
   </div>
-</div>
-  
 </body>
 </html>
-
