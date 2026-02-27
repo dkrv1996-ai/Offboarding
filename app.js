@@ -491,27 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Wire "Open" buttons
-  tbody.querySelectorAll('button[data-del]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.getAttribute('data-del');
-    const rec = getOne(id);
 
-    if (!rec) return;
-
-    const ok = confirm(`Delete request ${id} for ${rec.data.employeeName}? This cannot be undone.`);
-    if (!ok) return;
-
-    // If you're deleting the currently opened record
-    if (currentRecord && currentRecord.id === id) {
-      currentRecord = null;
-      resetWorkflowUI();
-      document.getElementById('offboardingForm').reset();
-    }
-
-    deleteOne(id);
-    renderTable();
-  });
-});
 
     // Wire "Delete" buttons
     tbody.querySelectorAll('button[data-del]').forEach(btn => {
@@ -541,5 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
   populateApproverLabels({});
   renderTable();
 });
+
 
 
