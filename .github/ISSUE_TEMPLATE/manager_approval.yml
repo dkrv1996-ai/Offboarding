@@ -1,0 +1,30 @@
+name: Manager Approval
+description: Manager approval form for employee offboarding.
+title: "Manager Approval - {{ offboard_id }}"
+labels: ["approval", "manager"]
+
+body:
+  - type: input
+    id: offboard_id
+    attributes:
+      label: Offboarding Ticket Number
+      description: Auto-filled ID from HR request
+      placeholder: "42"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Manager Decision
+      options:
+        - Approve
+        - Reject
+    validations:
+      required: true
+
+  - type: textarea
+    id: comment
+    attributes:
+      label: Comments / Remarks
+      description: Add any notes regarding the approval
