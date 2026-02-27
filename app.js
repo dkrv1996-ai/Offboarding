@@ -1,84 +1,174 @@
-// Simple Offboarding Workflow Controller
-// Stages: HR -> Manager -> Finance -> IT -> Admin -> Final HR -> Completed
+/* Offboarding Workflow + Dashboard (No external apps, no mailto)
+   Storage: localStorage.offboardingRequests = JSON.stringify([...])
+   Request model:
+   {
+     id, createdAt, updatedAt,
+     status: 'new'|'in-progress'|'completed'|'rejected',
+     currentStep: 0..6,
+     data: {...form fields & approvals...},
+     history: [{at, by, action, notes}]
+   }
+*/
 
 document.addEventListener('DOMContentLoaded', () => {
-  const state = {
-    currentStep: 0, // 0-New, 1-Manager, 2-Finance, 3-IT, 4-Admin, 5-HR Final, 6-Completed
-    data: {}
-  };
+  // ---------- Helpers ----------
+  const $  = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const nowISO = () => new Date().toISOString();
+  const fmtDT  = iso => new Date(iso).toLocaleString();
 
-  const steps = [
-    'new',       // 0
-    'manager',   // 1
-    'finance',   // 2
-    'it',        // 3
-    'admin',     // 4
-    'hr-final',  // 5
-    'completed'  // 6
+  function uid() { return 'REQ-' + Date.now(); }
+
+  function loadAll() {
+    try { return JSON.parse(localStorage.getItem('offboardingRequests') || '[]'); }
+    catch { return []; }
+  }
+  function saveAll(list) {
+    localStorage.setItem('offboardingRequests', JSON.stringify(list));
+  }
+  function saveOne(rec) {
+    const list = loadAll();
+    const idx = list.findIndex(x => x.id === rec.id);
+    if (idx >= 0) list[idx] = rec; else list.unshift(rec);
+    saveAll(list);
+  }
+  function getOne(id) {
+    return loadAll().find(x => x.id === id) || null;
+  }
+
+  // ---------- Views (New vs Dashboard) ----------
+  const navNew = $('#navNew');
+  const navDash = $('#navDashboard');
+  const viewNew = $('#view-new');
+  const viewDashboard = $('#view-dashboard');
+
+  function showNewView() {
+    viewNew.hidden = false;
+    viewDashboard.hidden = true;
+    navNew.classList.add('active');
+    navDash.classList.remove('active');
+  }
+  function showDashboardView() {
+    viewNew.hidden = true;
+    viewDashboard.hidden = false;
+    navDash.classList.add('active');
+    navNew.classList.remove('active');
+    renderTable();
+  }
+
+  navNew.addEventListener('click', showNewView);
+  navDash.addEventListener('click', showDashboardView);
+  $('#btnNewFromDashboard').addEventListener('click', showNewView);
+
+  // ---------- Status / Steps ----------
+  const steps = ['new','manager','finance','it','admin','hr-final','completed'];
+  const stepLabels = [
+    'New',
+    'Pending Line Manager Approval',
+    'Pending Finance Approval',
+    'Pending IT Approval',
+    'Pending Admin Approval',
+    'Pending Final HR Approval',
+    'Completed'
   ];
 
-  // Helpers
-  const $ = (sel) => document.querySelector(sel);
-  const show = (el) => { el && (el.hidden = false); };
-  const hide = (el) => { el && (el.hidden = true); };
-
-  const sectionManager = document.querySelector('[data-role="manager"]');
-  const sectionFinance = document.querySelector('[data-role="finance"]');
-  const sectionIT = document.querySelector('[data-role="it"]');
-  const sectionAdmin = document.querySelector('[data-role="admin"]');
-  const sectionHRFinal = document.querySelector('[data-role="hr-final"]');
-
-  const allRoleSections = [sectionManager, sectionFinance, sectionIT, sectionAdmin, sectionHRFinal];
-
-  function updateProgress() {
-    const items = Array.from($('#statusProgress').querySelectorAll('li'));
+  function updateProgress(currentStep) {
+    const items = $$('#statusProgress li');
     items.forEach((li, idx) => {
-      li.classList.remove('done', 'current', 'pending');
-      if (idx < state.currentStep) li.classList.add('done');
-      else if (idx === state.currentStep) li.classList.add('current');
+      li.classList.remove('done','current','pending');
+      if (idx < currentStep) li.classList.add('done');
+      else if (idx === currentStep) li.classList.add('current');
       else li.classList.add('pending');
     });
   }
 
+  // ---------- Current Working Record in UI ----------
+  let currentRecord = null;
+
+  function resetWorkflowUI() {
+    // Hide all role sections
+    $$('.role-only').forEach(sec => sec.hidden = true);
+    // Clear messages
+    ['#managerMsg','#financeMsg','#itMsg','#adminMsg','#hrFinalMsg','#formMsg']
+      .forEach(sel => { const el = $(sel); if (el) el.textContent = ''; });
+    // Reset form enabled
+    Array.from($('#offboardingForm').elements).forEach(el => el.disabled = false);
+  }
+
+  function populateApproverLabels(rec) {
+    $('#labelManagerEmail').textContent   = rec?.data?.lineManagerEmail || '';
+    $('#labelFinanceEmail').textContent   = rec?.data?.financeApproverEmail || '';
+    $('#labelITEmail').textContent        = rec?.data?.itApproverEmail || '';
+    $('#labelAdminEmail').textContent     = rec?.data?.adminApproverEmail || '';
+    $('#labelHRFinalEmail').textContent   = rec?.data?.hrFinalApproverEmail || '';
+  }
+
   function goToStep(stepIndex) {
-    state.currentStep = stepIndex;
-    // Hide all role sections then show the current one (if any)
-    allRoleSections.forEach(hide);
+    if (!currentRecord) return;
+    currentRecord.currentStep = stepIndex;
+    currentRecord.updatedAt = nowISO();
+    currentRecord.status = (stepIndex >= 6)
+      ? (currentRecord.status === 'rejected' ? 'rejected' : 'completed')
+      : 'in-progress';
+    saveOne(currentRecord);
+
+    // Hide all role sections and show the right one
+    $$('.role-only').forEach(sec => sec.hidden = true);
     switch (steps[stepIndex]) {
-      case 'manager': show(sectionManager); break;
-      case 'finance': show(sectionFinance); break;
-      case 'it':      show(sectionIT);      break;
-      case 'admin':   show(sectionAdmin);   break;
-      case 'hr-final':show(sectionHRFinal); break;
-      case 'completed':
-        toast('✅ Offboarding flow completed.');
-        break;
+      case 'manager':  $('[data-role="manager"]').hidden = false; break;
+      case 'finance':  $('[data-role="finance"]').hidden = false; break;
+      case 'it':       $('[data-role="it"]').hidden = false; break;
+      case 'admin':    $('[data-role="admin"]').hidden = false; break;
+      case 'hr-final': $('[data-role="hr-final"]').hidden = false; break;
+      default: break;
     }
-    updateProgress();
+
+    updateProgress(stepIndex);
+    renderTable(); // keep dashboard live
   }
 
-  function toast(msg, targetSelector) {
-    if (targetSelector) {
-      const node = $(targetSelector);
-      if (node) node.textContent = msg;
-    } else {
-      console.log(msg);
+  function openRecord(rec) {
+    currentRecord = rec;
+    // Fill HR form and lock (read-only view when opening an existing request)
+    $('#employeeName').value = rec.data.employeeName;
+    $('#employeeId').value = rec.data.employeeId;
+    $('#department').value = rec.data.department;
+    $('#jobTitle').value = rec.data.jobTitle;
+    $('#lastWorkingDay').value = rec.data.lastWorkingDay;
+    $('#reason').value = rec.data.reason;
+    $('#lineManager').value = rec.data.lineManagerEmail;
+    $('#financeApproverEmail').value = rec.data.financeApproverEmail;
+    $('#itApproverEmail').value = rec.data.itApproverEmail;
+    $('#adminApproverEmail').value = rec.data.adminApproverEmail;
+    $('#hrFinalApproverEmail').value = rec.data.hrFinalApproverEmail;
+    $('#assets').value = rec.data.assets || '';
+    $('#comments').value = rec.data.comments || '';
+
+    // Lock HR section (view-only after creation)
+    Array.from($('#offboardingForm').elements).forEach(el => el.disabled = true);
+    $('#formMsg').textContent = `Request ${rec.id} | Created: ${fmtDT(rec.createdAt)} | Status: ${rec.status} | Stage: ${stepLabels[rec.currentStep]}`;
+
+    populateApproverLabels(rec);
+    updateProgress(rec.currentStep);
+
+    // Show appropriate role section
+    $$('.role-only').forEach(sec => sec.hidden = true);
+    switch (steps[rec.currentStep]) {
+      case 'manager':  $('[data-role="manager"]').hidden = false; break;
+      case 'finance':  $('[data-role="finance"]').hidden = false; break;
+      case 'it':       $('[data-role="it"]').hidden = false; break;
+      case 'admin':    $('[data-role="admin"]').hidden = false; break;
+      case 'hr-final': $('[data-role="hr-final"]').hidden = false; break;
+      default: break;
     }
+
+    showNewView();
   }
 
-  function mailto(to, subject, body) {
-    if (!to) return;
-    const s = encodeURIComponent(subject || '');
-    const b = encodeURIComponent(body || '');
-    const href = `mailto:${to}?subject=${s}&body=${b}`;
-    window.open(href, '_blank');
-  }
-
-  // --- HR Form Submit ---
+  // ---------- HR Form Submit (Create Request) ----------
   $('#offboardingForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
-    // Grab HR form data
     const d = {
       employeeName: $('#employeeName').value.trim(),
       employeeId: $('#employeeId').value.trim(),
@@ -87,291 +177,242 @@ document.addEventListener('DOMContentLoaded', () => {
       lastWorkingDay: $('#lastWorkingDay').value,
       reason: $('#reason').value,
       lineManagerEmail: $('#lineManager').value.trim(),
+      financeApproverEmail: $('#financeApproverEmail').value.trim(),
+      itApproverEmail: $('#itApproverEmail').value.trim(),
+      adminApproverEmail: $('#adminApproverEmail').value.trim(),
+      hrFinalApproverEmail: $('#hrFinalApproverEmail').value.trim(),
       assets: $('#assets').value.trim(),
-      comments: $('#comments').value.trim(),
-      createdAt: new Date().toISOString()
+      comments: $('#comments').value.trim()
     };
 
-    // Basic validation
-    const requiredKeys = ['employeeName', 'employeeId', 'department', 'jobTitle', 'lastWorkingDay', 'reason', 'lineManagerEmail'];
+    // Validate required
+    const requiredKeys = [
+      'employeeName','employeeId','department','jobTitle',
+      'lastWorkingDay','reason','lineManagerEmail',
+      'financeApproverEmail','itApproverEmail','adminApproverEmail','hrFinalApproverEmail'
+    ];
     const missing = requiredKeys.filter(k => !d[k]);
     if (missing.length) {
       $('#formMsg').textContent = `Please fill required fields: ${missing.join(', ')}`;
       return;
     }
 
-    state.data = d;
+    const rec = {
+      id: uid(),
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+      status: 'in-progress',
+      currentStep: 1, // Move to Manager after creation
+      data: d,
+      history: [
+        { at: nowISO(), by: 'HR', action: 'Created', notes: d.comments || '' }
+      ]
+    };
 
-    // Lock HR form (make read-only)
+    saveOne(rec);
+    resetWorkflowUI(); // ensures clean state
+    currentRecord = rec;
+    $('#formMsg').textContent = `✔ Request ${rec.id} created. Sent to Line Manager stage.`;
+    populateApproverLabels(rec);
+    // Lock HR form
     Array.from($('#offboardingForm').elements).forEach(el => el.disabled = true);
-    $('#formMsg').textContent = '✔ Request created. Sent to Line Manager for approval.';
-    
-    // Notify Line Manager
-    mailto(
-      d.lineManagerEmail,
-      `Offboarding Approval Needed: ${d.employeeName} (${d.employeeId})`,
-      [
-        `Dear Manager,`,
-        ``,
-        `An offboarding request requires your approval.`,
-        ``,
-        `Employee: ${d.employeeName} (${d.employeeId})`,
-        `Department: ${d.department}`,
-        `Job Title: ${d.jobTitle}`,
-        `Last Working Day: ${d.lastWorkingDay}`,
-        `Reason: ${d.reason}`,
-        ``,
-        `Assets (if any): ${d.assets || 'N/A'}`,
-        ``,
-        `Comments: ${d.comments || 'N/A'}`,
-        ``,
-        `Please review and approve in the workflow tool.`,
-      ].join('\n')
-    );
-
-    // Move to Manager step
     goToStep(1);
   });
 
-  // --- Manager Approve/Reject ---
+  // ---------- Approvals ----------
+  function addHistory(by, action, notes) {
+    currentRecord.history.push({ at: nowISO(), by, action, notes });
+    currentRecord.updatedAt = nowISO();
+  }
+
+  // Manager
   $('#btnManagerApprove').addEventListener('click', () => {
-    const mgrComments = $('#managerComments').value.trim();
-    if (!mgrComments) {
-      toast('Manager comments are required.', '#managerMsg');
-      return;
-    }
-    state.data.managerComments = mgrComments;
-    toast('✔ Manager approved. Moving to Finance.', '#managerMsg');
+    const notes = $('#managerComments').value.trim();
+    if (!notes) { $('#managerMsg').textContent = 'Manager comments are required.'; return; }
+    addHistory('Manager', 'Approved', notes);
+    saveOne(currentRecord);
+    $('#managerMsg').textContent = '✔ Manager approved. Moving to Finance.';
     goToStep(2);
   });
-
   $('#btnManagerReject').addEventListener('click', () => {
-    const mgrComments = $('#managerComments').value.trim();
-    state.data.managerComments = mgrComments || '(No comments)';
-    toast('❌ Rejected by Manager. Flow stopped.', '#managerMsg');
+    const notes = $('#managerComments').value.trim() || '(No comments)';
+    addHistory('Manager', 'Rejected', notes);
+    currentRecord.status = 'rejected';
+    saveOne(currentRecord);
+    $('#managerMsg').textContent = '❌ Rejected by Manager. Flow stopped.';
     goToStep(6);
   });
 
-  // --- Finance Approve/Reject ---
+  // Finance
   $('#btnFinanceApprove').addEventListener('click', () => {
-    const financeEmail = $('#financeApproverEmail').value.trim();
     const pendingSalary = $('#pendingSalary').value.trim();
     const recoveryAmount = $('#recoveryAmount').value;
     const finalSettlement = $('#finalSettlement').value;
     const financeComments = $('#financeComments').value.trim();
-
-    if (!financeEmail || !pendingSalary || !recoveryAmount || !finalSettlement || !financeComments) {
-      toast('Please complete all required fields.', '#financeMsg');
-      return;
+    if (!pendingSalary || !recoveryAmount || !finalSettlement || !financeComments) {
+      $('#financeMsg').textContent = 'Please complete all required fields.'; return;
     }
-
-    Object.assign(state.data, {
-      financeEmail,
-      pendingSalary,
-      recoveryAmount,
-      finalSettlement,
-      financeComments
-    });
-
-    toast('✔ Finance approved. Moving to IT.', '#financeMsg');
-
-    // Pre-notify IT if IT email already filled (optional)
-    const itEmailNow = $('#itApproverEmail')?.value.trim();
-    if (itEmailNow) {
-      mailto(
-        itEmailNow,
-        `IT Offboarding Actions Required: ${state.data.employeeName} (${state.data.employeeId})`,
-        [
-          `Dear IT,`,
-          ``,
-          `Please complete offboarding actions for the employee.`,
-          ``,
-          `Employee: ${state.data.employeeName} (${state.data.employeeId})`,
-          `Last Working Day: ${state.data.lastWorkingDay}`,
-          ``,
-          `Finance Notes:`,
-          `- Pending Salary/Dues: ${pendingSalary}`,
-          `- Recovery Amount: ₹${recoveryAmount}`,
-          `- Final Settlement Completed: ${finalSettlement}`,
-          `- Comments: ${financeComments}`,
-        ].join('\n')
-      );
-    }
-
+    Object.assign(currentRecord.data, { pendingSalary, recoveryAmount, finalSettlement, financeComments });
+    addHistory('Finance', 'Approved', financeComments);
+    saveOne(currentRecord);
+    $('#financeMsg').textContent = '✔ Finance approved. Moving to IT.';
     goToStep(3);
   });
-
   $('#btnFinanceReject').addEventListener('click', () => {
-    toast('❌ Rejected by Finance. Flow stopped.', '#financeMsg');
+    const financeComments = $('#financeComments').value.trim() || '(No comments)';
+    addHistory('Finance', 'Rejected', financeComments);
+    currentRecord.status = 'rejected';
+    saveOne(currentRecord);
+    $('#financeMsg').textContent = '❌ Rejected by Finance. Flow stopped.';
     goToStep(6);
   });
 
-  // --- IT Approve/Reject ---
+  // IT
   $('#btnITApprove').addEventListener('click', () => {
-    const itEmail = $('#itApproverEmail').value.trim();
     const laptopReturned = $('#laptopReturned').value;
     const emailDisabled = $('#emailDisabled').value;
     const vpnDisabled = $('#vpnDisabled').value;
     const otherSystems = $('#otherSystems').value.trim();
     const itComments = $('#itComments').value.trim();
-
-    if (!itEmail || !laptopReturned || !emailDisabled || !vpnDisabled || !itComments) {
-      toast('Please complete all required fields.', '#itMsg');
-      return;
+    if (!laptopReturned || !emailDisabled || !vpnDisabled || !itComments) {
+      $('#itMsg').textContent = 'Please complete all required fields.'; return;
     }
-
-    Object.assign(state.data, {
-      itEmail,
-      laptopReturned,
-      emailDisabled,
-      vpnDisabled,
-      otherSystems,
-      itComments
-    });
-
-    toast('✔ IT approved. Moving to Admin.', '#itMsg');
-
-    // Pre-notify Admin if Admin email already filled
-    const adminEmailNow = $('#adminApproverEmail')?.value.trim();
-    if (adminEmailNow) {
-      mailto(
-        adminEmailNow,
-        `Admin Offboarding Actions Required: ${state.data.employeeName} (${state.data.employeeId})`,
-        [
-          `Dear Admin,`,
-          ``,
-          `Please complete admin offboarding steps.`,
-          ``,
-          `Employee: ${state.data.employeeName} (${state.data.employeeId})`,
-          `Last Working Day: ${state.data.lastWorkingDay}`,
-          ``,
-          `IT Notes:`,
-          `- Laptop Returned: ${laptopReturned}`,
-          `- Email Access Disabled: ${emailDisabled}`,
-          `- VPN Access Disabled: ${vpnDisabled}`,
-          `- Other Systems: ${otherSystems || 'N/A'}`,
-          `- IT Comments: ${itComments}`,
-        ].join('\n')
-      );
-    }
-
+    Object.assign(currentRecord.data, { laptopReturned, emailDisabled, vpnDisabled, otherSystems, itComments });
+    addHistory('IT', 'Approved', itComments);
+    saveOne(currentRecord);
+    $('#itMsg').textContent = '✔ IT approved. Moving to Admin.';
     goToStep(4);
   });
-
   $('#btnITReject').addEventListener('click', () => {
-    toast('❌ Rejected by IT. Flow stopped.', '#itMsg');
+    const itComments = $('#itComments').value.trim() || '(No comments)';
+    addHistory('IT', 'Rejected', itComments);
+    currentRecord.status = 'rejected';
+    saveOne(currentRecord);
+    $('#itMsg').textContent = '❌ Rejected by IT. Flow stopped.';
     goToStep(6);
   });
 
-  // --- Admin Approve/Reject ---
+  // Admin
   $('#btnAdminApprove').addEventListener('click', () => {
-    const adminEmail = $('#adminApproverEmail').value.trim();
     const idCardReturned = $('#idCardReturned').value;
     const parkingDisabled = $('#parkingDisabled').value;
     const deskCleared = $('#deskCleared').value;
     const adminComments = $('#adminComments').value.trim();
-
-    if (!adminEmail || !idCardReturned || !parkingDisabled || !deskCleared || !adminComments) {
-      toast('Please complete all required fields.', '#adminMsg');
-      return;
+    if (!idCardReturned || !parkingDisabled || !deskCleared || !adminComments) {
+      $('#adminMsg').textContent = 'Please complete all required fields.'; return;
     }
-
-    Object.assign(state.data, {
-      adminEmail,
-      idCardReturned,
-      parkingDisabled,
-      deskCleared,
-      adminComments
-    });
-
-    toast('✔ Admin approved. Moving to Final HR.', '#adminMsg');
-
-    // Pre-notify Final HR if email already filled
-    const hrFinalEmailNow = $('#hrFinalApproverEmail')?.value.trim();
-    if (hrFinalEmailNow) {
-      mailto(
-        hrFinalEmailNow,
-        `Final HR Closure Needed: ${state.data.employeeName} (${state.data.employeeId})`,
-        [
-          `Dear HR,`,
-          ``,
-          `Please complete final HR steps and close the offboarding.`,
-          ``,
-          `Employee: ${state.data.employeeName} (${state.data.employeeId})`,
-          `Last Working Day: ${state.data.lastWorkingDay}`,
-          ``,
-          `Admin Notes:`,
-          `- ID Card Returned: ${idCardReturned}`,
-          `- Parking Access Disabled: ${parkingDisabled}`,
-          `- Desk Cleared: ${deskCleared}`,
-          `- Admin Comments: ${adminComments}`,
-        ].join('\n')
-      );
-    }
-
+    Object.assign(currentRecord.data, { idCardReturned, parkingDisabled, deskCleared, adminComments });
+    addHistory('Admin', 'Approved', adminComments);
+    saveOne(currentRecord);
+    $('#adminMsg').textContent = '✔ Admin approved. Moving to Final HR.';
     goToStep(5);
   });
-
   $('#btnAdminReject').addEventListener('click', () => {
-    toast('❌ Rejected by Admin. Flow stopped.', '#adminMsg');
+    const adminComments = $('#adminComments').value.trim() || '(No comments)';
+    addHistory('Admin', 'Rejected', adminComments);
+    currentRecord.status = 'rejected';
+    saveOne(currentRecord);
+    $('#adminMsg').textContent = '❌ Rejected by Admin. Flow stopped.';
     goToStep(6);
   });
 
-  // --- Final HR Approve/Reject ---
+  // Final HR
   $('#btnHRFinalApprove').addEventListener('click', () => {
-    const hrFinalEmail = $('#hrFinalApproverEmail').value.trim();
     const expLetter = $('#expLetter').value;
     const exitInterview = $('#exitInterview').value;
     const finalHrComments = $('#finalHrComments').value.trim();
-
-    if (!hrFinalEmail || !expLetter || !exitInterview || !finalHrComments) {
-      toast('Please complete all required fields.', '#hrFinalMsg');
-      return;
+    if (!expLetter || !exitInterview || !finalHrComments) {
+      $('#hrFinalMsg').textContent = 'Please complete all required fields.'; return;
     }
+    Object.assign(currentRecord.data, { expLetter, exitInterview, finalHrComments, closedAt: nowISO() });
+    addHistory('Final HR', 'Approved & Closed', finalHrComments);
+    currentRecord.status = 'completed';
+    saveOne(currentRecord);
+    $('#hrFinalMsg').textContent = '🎉 Offboarding completed successfully.';
+    goToStep(6);
+  });
+  $('#btnHRFinalReject').addEventListener('click', () => {
+    const finalHrComments = $('#finalHrComments').value.trim() || '(No comments)';
+    addHistory('Final HR', 'Rejected', finalHrComments);
+    currentRecord.status = 'rejected';
+    saveOne(currentRecord);
+    $('#hrFinalMsg').textContent = '❌ Rejected by Final HR. Flow stopped.';
+    goToStep(6);
+  });
 
-    Object.assign(state.data, {
-      hrFinalEmail,
-      expLetter,
-      exitInterview,
-      finalHrComments,
-      closedAt: new Date().toISOString()
+  // ---------- Dashboard Table ----------
+  const tbody = $('#requestsTable tbody');
+  const searchBox = $('#searchBox');
+  const statusFilter = $('#statusFilter');
+  $('#btnRefresh').addEventListener('click', renderTable);
+  searchBox.addEventListener('input', renderTable);
+  statusFilter.addEventListener('change', renderTable);
+
+  function stageFromStep(step) {
+    return stepLabels[step] || '';
+  }
+  function isOpen(rec) {
+    return rec.status === 'in-progress';
+  }
+  function isRejected(rec) {
+    return rec.status === 'rejected';
+  }
+  function isCompleted(rec) {
+    return rec.status === 'completed';
+  }
+
+  function renderTable() {
+    const q = (searchBox.value || '').toLowerCase();
+    const f = statusFilter.value; // all | open | completed | rejected
+    const list = loadAll();
+
+    const filtered = list.filter(rec => {
+      const hit = (rec.data.employeeName.toLowerCase().includes(q) ||
+                   rec.data.employeeId.toLowerCase().includes(q));
+      if (!hit) return false;
+      if (f === 'open' && !isOpen(rec)) return false;
+      if (f === 'completed' && !isCompleted(rec)) return false;
+      if (f === 'rejected' && !isRejected(rec)) return false;
+      return true;
     });
 
-    toast('🎉 Offboarding completed successfully.', '#hrFinalMsg');
+    tbody.innerHTML = '';
+    filtered.forEach(rec => {
+      const tr = document.createElement('tr');
 
-    // Optional FYI email to HR/Manager
-    mailto(
-      state.data.lineManagerEmail,
-      `Offboarding Completed: ${state.data.employeeName} (${state.data.employeeId})`,
-      [
-        `Hello,`,
-        ``,
-        `The offboarding request has been completed.`,
-        ``,
-        `Employee: ${state.data.employeeName} (${state.data.employeeId})`,
-        `Department: ${state.data.department}`,
-        `Job Title: ${state.data.jobTitle}`,
-        `Last Working Day: ${state.data.lastWorkingDay}`,
-        `Reason: ${state.data.reason}`,
-        ``,
-        `Final HR:`,
-        `- Experience Letter Issued: ${expLetter}`,
-        `- Exit Interview Completed: ${exitInterview}`,
-        `- Comments: ${finalHrComments}`,
-        ``,
-        `Closed At: ${new Date().toLocaleString()}`
-      ].join('\n')
-    );
+      tr.innerHTML = `
+        <td>${rec.id}</td>
+        <td>${rec.data.employeeName}</td>
+        <td>${rec.data.department}</td>
+        <td>${rec.data.lastWorkingDay}</td>
+        <td>${stageFromStep(rec.currentStep)}</td>
+        <td>
+          <span class="pill ${rec.status}">
+            ${rec.status}
+          </span>
+        </td>
+        <td>${fmtDT(rec.updatedAt)}</td>
+        <td><button class="btn sm" data-open="${rec.id}">Open</button></td>
+      `;
 
-    goToStep(6);
-  });
+      tbody.appendChild(tr);
+    });
 
-  $('#btnHRFinalReject').addEventListener('click', () => {
-    toast('❌ Rejected by Final HR. Flow stopped.', '#hrFinalMsg');
-    goToStep(6);
-  });
+    // Wire "Open" buttons
+    tbody.querySelectorAll('button[data-open]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rec = getOne(btn.getAttribute('data-open'));
+        if (rec) {
+          resetWorkflowUI();
+          openRecord(rec);
+        }
+      });
+    });
+  }
 
-  // Initialize
-  updateProgress();
-  // Start hidden sections (already hidden in HTML)
+  // ---------- Initial UI ----------
+  resetWorkflowUI();
+  updateProgress(0);
+  populateApproverLabels({});
+  renderTable();
 });
