@@ -1,0 +1,24 @@
+name: Admin Approval
+description: Admin approval for asset return / ID / parking.
+title: "Admin Approval - {{ offboard_id }}"
+labels: ["approval", "admin"]
+body:
+  - type: input
+    id: offboard_id
+    attributes:
+      label: Offboarding Ticket Number
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Admin Decision
+      options:
+        - Approve
+        - Reject
+
+  - type: textarea
+    id: comment
+    attributes:
+      label: Admin Comments
