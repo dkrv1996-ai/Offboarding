@@ -338,6 +338,11 @@ document.addEventListener('DOMContentLoaded', () => {
     saveOne(currentRecord);
     $('#hrFinalMsg').textContent = '❌ Rejected by Final HR. Flow stopped.';
     goToStep(6);
+});
+     $('#btnHRFinalApprove').addEventListener('click', () => {
+  // existing approve logic…
+  document.getElementById('printButtonContainer').hidden = false;
+
   });
 
   // ---------- Dashboard Table ----------
@@ -415,4 +420,61 @@ document.addEventListener('DOMContentLoaded', () => {
   updateProgress(0);
   populateApproverLabels({});
   renderTable();
+});
+$('#btnPrintSummary').addEventListener('click', () => {
+  if (!currentRecord) return;
+
+  let d = currentRecord.data;
+
+  // Basic employee details
+  p_id.textContent = currentRecord.id;
+  p_name.textContent = d.employeeName;
+  p_empid.textContent = d.employeeId;
+  p_dept.textContent = d.department;
+  p_job.textContent = d.jobTitle;
+  p_lwd.textContent = d.lastWorkingDay;
+  p_reason.textContent = d.reason;
+
+  // Manager
+  p_mgr_email.textContent = d.lineManagerEmail;
+  p_mgr_comments.textContent = d.managerComments || "";
+  p_mgr_status.textContent = currentRecord.history.find(h => h.by === 'Manager')?.action || "Pending";
+
+  // Finance
+  p_fin_email.textContent = d.financeApproverEmail;
+  p_fin_salary.textContent = d.pendingSalary || "";
+  p_fin_recovery.textContent = d.recoveryAmount || "";
+  p_fin_comments.textContent = d.financeComments || "";
+  p_fin_status.textContent = currentRecord.history.find(h => h.by === 'Finance')?.action || "Pending";
+
+  // IT
+  p_it_email.textContent = d.itApproverEmail;
+  p_it_laptop.textContent = d.laptopReturned || "";
+  p_it_mail.textContent = d.emailDisabled || "";
+  p_it_vpn.textContent = d.vpnDisabled || "";
+  p_it_other.textContent = d.otherSystems || "";
+  p_it_comments.textContent = d.itComments || "";
+  p_it_status.textContent = currentRecord.history.find(h => h.by === 'IT')?.action || "Pending";
+
+  // Admin
+  p_admin_email.textContent = d.adminApproverEmail;
+  p_admin_idcard.textContent = d.idCardReturned || "";
+  p_admin_parking.textContent = d.parkingDisabled || "";
+  p_admin_desk.textContent = d.deskCleared || "";
+  p_admin_comments.textContent = d.adminComments || "";
+  p_admin_status.textContent = currentRecord.history.find(h => h.by === 'Admin')?.action || "Pending";
+
+  // Final HR
+  p_hr_email.textContent = d.hrFinalApproverEmail;
+  p_hr_exp.textContent = d.expLetter || "";
+  p_hr_exit.textContent = d.exitInterview || "";
+  p_hr_comments.textContent = d.finalHrComments || "";
+  p_hr_status.textContent = currentRecord.status;
+
+  // History
+  p_history.textContent = currentRecord.history
+    .map(h => `${h.at} | ${h.by}: ${h.action}\n${h.notes}`)
+    .join("\n\n");
+
+  window.print();
 });
