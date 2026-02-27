@@ -1,0 +1,24 @@
+name: Final HR Approval
+description: HR final verification for offboarding completion.
+title: "Final HR Approval - {{ offboard_id }}"
+labels: ["approval", "hr-final"]
+body:
+  - type: input
+    id: offboard_id
+    attributes:
+      label: Offboarding Ticket Number
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: HR Final Decision
+      options:
+        - Approve
+        - Reject
+
+  - type: textarea
+    id: hr_comment
+    attributes:
+      label: Final HR Comments
