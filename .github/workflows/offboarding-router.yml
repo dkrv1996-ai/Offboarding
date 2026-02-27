@@ -1,0 +1,108 @@
+generate_pdf:
+    needs: route
+    if: ${{ contains(github.event.client_payload.stage, 'hr-final') && github.event.action == 'approved' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python + ReportLab
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          pip3 install reportlab
+
+      - name: Fetch Issue Details
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = Number(process.env.ISSUE);
+            const issue = await github.rest.issues.get({
+              owner: process.env.OWNER,
+              repo: process.env.REPO,
+              issue_number
+            });
+
+            const comments = await github.rest.issues.listComments({
+              owner: process.env.OWNER,
+              repo: process.env.REPO,
+              issue_number
+            });
+
+            core.setOutput("title", issue.data.title);
+            core.setOutput("body", issue.data.body);
+            core.setOutput("comments", JSON.stringify(comments.data));
+          env:
+            ISSUE: ${{ github.event.client_payload.issue_number }}
+
+      - name: Create PDF
+        run: |
+          python3 <<EOF
+          from reportlab.pdfgen import canvas
+          from reportlab.lib.pagesizes import letter
+          import json
+
+          title = """${{ steps.issue.outputs.title }}"""
+          body = """${{ steps.issue.outputs.body }}"""
+          comments = json.loads("""${{ steps.issue.outputs.comments }}""")
+
+          c = canvas.Canvas("Offboarding-Summary.pdf", pagesize=letter)
+          width, height = letter
+          y = height - 50
+
+          c.setFont("Helvetica-Bold", 16)
+          c.drawString(50, y, "Employee Offboarding Summary")
+          y -= 30
+
+          c.setFont("Helvetica", 12)
+          c.drawString(50, y, title)
+          y -= 20
+
+          c.setFont("Helvetica", 10)
+          for line in body.split("\\n"):
+            c.drawString(50, y, line)
+            y -= 15
+
+          y -= 20
+          c.setFont("Helvetica-Bold", 12)
+          c.drawString(50, y, "Approvals & Comments:")
+          y -= 20
+
+          c.setFont("Helvetica", 10)
+          for cmt in comments:
+            txt = f"[{cmt['user']['login']}] {cmt['created_at']}"
+            c.drawString(50, y, txt)
+            y -= 15
+            for line in cmt['body'].split("\\n"):
+              c.drawString(70, y, line)
+              y -= 12
+            y -= 10
+
+          c.save()
+          EOF
+
+      - name: Upload PDF Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Offboarding-Summary
+          path: Offboarding-Summary.pdf
+
+      - name: Attach PDF to Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue_number = Number(process.env.ISSUE);
+            const pdf = fs.readFileSync("Offboarding-Summary.pdf").toString("base64");
+
+            await github.rest.issues.createComment({
+              owner: process.env.OWNER,
+              repo: process.env.REPO,
+              issue_number,
+              body: "📄 **Offboarding Summary PDF Attached**"
+            });
+
+          env:
+            ISSUE: ${{ github.event.client_payload.issue_number }}
