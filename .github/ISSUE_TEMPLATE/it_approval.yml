@@ -1,0 +1,24 @@
+name: IT Approval
+description: IT approval for access removal, laptop return, etc.
+title: "IT Approval - {{ offboard_id }}"
+labels: ["approval", "it"]
+body:
+  - type: input
+    id: offboard_id
+    attributes:
+      label: Offboarding Ticket Number
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: IT Decision
+      options:
+        - Approve
+        - Reject
+
+  - type: textarea
+    id: comment
+    attributes:
+      label: IT Comments
