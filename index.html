@@ -6,6 +6,7 @@
   <title>Employee Offboarding – Request</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
+
 <body>
   <header class="app-header">
     <h1>Employee Offboarding</h1>
@@ -13,31 +14,39 @@
   </header>
 
   <main class="container">
-    <!-- HR Section: Creator -->
+
+    <!-- HR Section: Create Offboarding Request -->
     <section class="card" id="section-hr">
       <h2>HR: Create Offboarding Request</h2>
+
       <form id="offboardingForm" autocomplete="off" novalidate>
         <div class="grid">
+
           <div class="field">
             <label for="employeeName">Employee Name <span>*</span></label>
-            <input type="text" id="employeeName" name="employeeName" required/>
+            <input type="text" id="employeeName" name="employeeName" required>
           </div>
+
           <div class="field">
             <label for="employeeId">Employee ID <span>*</span></label>
-            <input type="text" id="employeeId" name="employeeId" required/>
+            <input type="text" id="employeeId" name="employeeId" required>
           </div>
+
           <div class="field">
             <label for="department">Department <span>*</span></label>
-            <input type="text" id="department" name="department" required/>
+            <input type="text" id="department" name="department" required>
           </div>
+
           <div class="field">
             <label for="jobTitle">Job Title <span>*</span></label>
-            <input type="text" id="jobTitle" name="jobTitle" required/>
+            <input type="text" id="jobTitle" name="jobTitle" required>
           </div>
+
           <div class="field">
             <label for="lastWorkingDay">Last Working Day <span>*</span></label>
-            <input type="date" id="lastWorkingDay" name="lastWorkingDay" required/>
+            <input type="date" id="lastWorkingDay" name="lastWorkingDay" required>
           </div>
+
           <div class="field">
             <label for="reason">Reason for Exit <span>*</span></label>
             <select id="reason" name="reason" required>
@@ -49,29 +58,40 @@
               <option>Other</option>
             </select>
           </div>
+
           <div class="field">
             <label for="lineManager">Line Manager (email) <span>*</span></label>
-            <input type="email" id="lineManager" name="lineManager" placeholder="manager@yourcompany.com" required/>
+            <input type="email" id="lineManager" name="lineManager" placeholder="manager@yourcompany.com" required>
           </div>
+
+          <div class="field">
+            <label for="departmentEmail">Department Email ID *</label>
+            <input type="email" id="departmentEmail" name="departmentEmail" required>
+          </div>
+
           <div class="field">
             <label for="assets">Company Assets Assigned (optional)</label>
-            <textarea id="assets" name="assets" rows="2" placeholder="Laptop, ID card, Mobile, VPN token, etc."></textarea>
+            <textarea id="assets" rows="2" placeholder="Laptop, ID card, Mobile, VPN token, etc."></textarea>
           </div>
+
           <div class="field full">
             <label for="comments">Comments</label>
-            <textarea id="comments" name="comments" rows="3"></textarea>
+            <textarea id="comments" rows="3"></textarea>
           </div>
+
         </div>
 
         <div class="actions">
           <button type="submit" class="btn primary">Create Request</button>
           <button type="reset" class="btn">Clear</button>
         </div>
+
         <p id="formMsg" class="muted"></p>
+
       </form>
     </section>
 
-    <!-- Role-Specific Checklists (read/write during approvals) -->
+    <!-- Manager Section -->
     <section class="card role-only" data-role="manager">
       <h2>Line Manager / Dept Head</h2>
       <div class="grid">
@@ -80,44 +100,68 @@
           <textarea id="managerComments" rows="3"></textarea>
         </div>
       </div>
-       <section class="card role-only" data-role="it">
+    </section>
+
+    <!-- IT Section -->
+    <section class="card role-only" data-role="it">
       <h2>IT Checklist</h2>
       <div class="grid">
+
         <div class="field">
           <label for="laptopReturned">Laptop Returned <span>*</span></label>
-          <select id="laptopReturned"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="laptopReturned">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field">
           <label for="emailDisabled">Email Access Disabled <span>*</span></label>
-          <select id="emailDisabled"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="emailDisabled">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field">
           <label for="vpnDisabled">VPN Access Disabled <span>*</span></label>
-          <select id="vpnDisabled"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="vpnDisabled">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field full">
           <label for="otherSystems">Other System Access Removed (list)</label>
           <textarea id="otherSystems" rows="2"></textarea>
         </div>
+
         <div class="field full">
           <label for="itComments">IT Comments <span>*</span></label>
           <textarea id="itComments" rows="3"></textarea>
         </div>
+
       </div>
     </section>
-    </section>
 
+    <!-- Finance Section -->
     <section class="card role-only" data-role="finance">
       <h2>Finance Checklist</h2>
       <div class="grid">
+
         <div class="field">
           <label for="pendingSalary">Pending Salary / Dues <span>*</span></label>
-          <input type="text" id="pendingSalary" />
+          <input type="text" id="pendingSalary">
         </div>
+
         <div class="field">
           <label for="recoveryAmount">Recovery Amount <span>*</span></label>
-          <input type="number" id="recoveryAmount" min="0" step="0.01"/>
+          <input type="number" id="recoveryAmount" min="0" step="0.01">
         </div>
+
         <div class="field">
           <label for="finalSettlement">Final Settlement Completed <span>*</span></label>
           <select id="finalSettlement">
@@ -126,84 +170,118 @@
             <option>No</option>
           </select>
         </div>
+
         <div class="field full">
           <label for="financeComments">Finance Comments <span>*</span></label>
           <textarea id="financeComments" rows="3"></textarea>
         </div>
+
       </div>
     </section>
 
+    <!-- Admin Section -->
     <section class="card role-only" data-role="admin">
       <h2>Admin Checklist</h2>
       <div class="grid">
+
         <div class="field">
           <label for="idCardReturned">ID Card Returned <span>*</span></label>
-          <select id="idCardReturned"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="idCardReturned">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field">
           <label for="parkingDisabled">Parking Access Disabled <span>*</span></label>
-          <select id="parkingDisabled"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="parkingDisabled">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field full">
           <label for="deskCleared">Desk Cleared <span>*</span></label>
-          <select id="deskCleared"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="deskCleared">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field full">
           <label for="adminComments">Admin Comments <span>*</span></label>
           <textarea id="adminComments" rows="3"></textarea>
         </div>
+
       </div>
     </section>
 
+    <!-- Final HR -->
     <section class="card role-only" data-role="hr-final">
       <h2>Final HR</h2>
+
       <div class="grid">
+
         <div class="field">
           <label for="expLetter">Experience Letter Issued <span>*</span></label>
-          <select id="expLetter"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="expLetter">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field">
           <label for="exitInterview">Exit Interview Completed <span>*</span></label>
-          <select id="exitInterview"><option value="">Select…</option><option>Yes</option><option>No</option></select>
+          <select id="exitInterview">
+            <option value="">Select…</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
         </div>
+
         <div class="field full">
           <label for="finalHrComments">Final HR Comments</label>
           <textarea id="finalHrComments" rows="3"></textarea>
         </div>
+
       </div>
-<h3>Approver Email IDs</h3>
-<div class="grid">
 
-  <div class="field">
-    <label for="managerEmail">Manager Email *</label>
-    <input type="email" id="managerEmail" name="managerEmail" required>
-  </div>
+      <h3>Approver Email IDs</h3>
+      <div class="grid">
 
-  <div class="field">
-    <label for="financeEmail">Finance Email *</label>
-    <input type="email" id="financeEmail" name="financeEmail" required>
-  </div>
+        <div class="field">
+          <label for="managerEmail">Manager Email *</label>
+          <input type="email" id="managerEmail" required>
+        </div>
 
-  <div class="field">
-    <label for="itEmail">IT Email *</label>
-    <input type="email" id="itEmail" name="itEmail" required>
-  </div>
+        <div class="field">
+          <label for="financeEmail">Finance Email *</label>
+          <input type="email" id="financeEmail" required>
+        </div>
 
-  <div class="field">
-    <label for="adminEmail">Admin Email *</label>
-    <input type="email" id="adminEmail" name="adminEmail" required>
-  </div>
+        <div class="field">
+          <label for="itEmail">IT Email *</label>
+          <input type="email" id="itEmail" required>
+        </div>
 
-  <div class="field">
-    <label for="hrFinalEmail">Final HR Email *</label>
-    <input type="email" id="hrFinalEmail" name="hrFinalEmail" required>
-  </div>
+        <div class="field">
+          <label for="adminEmail">Admin Email *</label>
+          <input type="email" id="adminEmail" required>
+        </div>
 
-</div>
+        <div class="field">
+          <label for="hrFinalEmail">Final HR Email *</label>
+          <input type="email" id="hrFinalEmail" required>
+        </div>
 
+      </div>
     </section>
 
-    <!-- Progress + Status -->
+    <!-- Status Section -->
     <section class="card">
       <h2>Status</h2>
       <ol class="progress" id="statusProgress">
@@ -216,6 +294,7 @@
         <li>Completed</li>
       </ol>
     </section>
+
   </main>
 
   <footer class="footer">
@@ -225,6 +304,4 @@
   <script src="app.js"></script>
 </body>
 </html>
-
 ``
-
