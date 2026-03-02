@@ -371,63 +371,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Print Summary ----------
   $('#btnPrintSummary').addEventListener('click', () => {
-    if (!currentRecord) return;
-    const d = currentRecord.data;
+  if (!currentRecord) return;
+  const d = currentRecord.data;
+  const P = id => document.getElementById(id);
 
-    const P = (id) => document.getElementById(id);
+  P('p_id').textContent = currentRecord.id;
+  P('p_name').textContent = d.employeeName;
+  P('p_empid').textContent = d.employeeId;
+  P('p_dept').textContent = d.department;
+  P('p_job').textContent = d.jobTitle;
+  P('p_lwd').textContent = d.lastWorkingDay;
+  P('p_reason').textContent = d.reason;
 
-    // Basic employee details
-    P('p_id').textContent    = currentRecord.id;
-    P('p_name').textContent  = d.employeeName || '';
-    P('p_empid').textContent = d.employeeId || '';
-    P('p_dept').textContent  = d.department || '';
-    P('p_job').textContent   = d.jobTitle || '';
-    P('p_lwd').textContent   = d.lastWorkingDay || '';
-    P('p_reason').textContent= d.reason || '';
+  P('p_mgr_email').textContent = d.lineManagerEmail;
+  P('p_mgr_comments').textContent = d.managerComments || '';
+  P('p_mgr_status').textContent =
+    currentRecord.history.find(h => h.by === 'Manager')?.action || 'Pending';
 
-    // Manager
-    P('p_mgr_email').textContent    = d.lineManagerEmail || '';
-    P('p_mgr_comments').textContent = d.managerComments || '';
-    P('p_mgr_status').textContent   = currentRecord.history.find(h => h.by === 'Manager')?.action || 'Pending';
+  P('p_fin_email').textContent = d.financeApproverEmail;
+  P('p_fin_salary').textContent = d.pendingSalary || '';
+  P('p_fin_recovery').textContent = d.recoveryAmount || '';
+  P('p_fin_comments').textContent = d.financeComments || '';
+  P('p_fin_status').textContent =
+    currentRecord.history.find(h => h.by === 'Finance')?.action || 'Pending';
 
-    // Finance
-    P('p_fin_email').textContent    = d.financeApproverEmail || '';
-    P('p_fin_salary').textContent   = d.pendingSalary || '';
-    P('p_fin_recovery').textContent = d.recoveryAmount || '';
-    P('p_fin_comments').textContent = d.financeComments || '';
-    P('p_fin_status').textContent   = currentRecord.history.find(h => h.by === 'Finance')?.action || 'Pending';
+  P('p_it_email').textContent = d.itApproverEmail;
+  P('p_it_laptop').textContent = d.laptopReturned || '';
+  P('p_it_mail').textContent = d.emailDisabled || '';
+  P('p_it_vpn').textContent = d.vpnDisabled || '';
+  P('p_it_comments').textContent = d.itComments || '';
 
-    // IT
-    P('p_it_email').textContent     = d.itApproverEmail || '';
-    P('p_it_laptop').textContent    = d.laptopReturned || '';
-    P('p_it_mail').textContent      = d.emailDisabled || '';
-    P('p_it_vpn').textContent       = d.vpnDisabled || '';
-    P('p_it_other').textContent     = d.otherSystems || '';
-    P('p_it_comments').textContent  = d.itComments || '';
-    P('p_it_status').textContent    = currentRecord.history.find(h => h.by === 'IT')?.action || 'Pending';
+  P('p_admin_email').textContent = d.adminApproverEmail;
+  P('p_admin_idcard').textContent = d.idCardReturned || '';
+  P('p_admin_desk').textContent = d.deskCleared || '';
+  P('p_admin_comments').textContent = d.adminComments || '';
 
-    // Admin
-    P('p_admin_email').textContent  = d.adminApproverEmail || '';
-    P('p_admin_idcard').textContent = d.idCardReturned || '';
-    P('p_admin_parking').textContent= d.parkingDisabled || '';
-    P('p_admin_desk').textContent   = d.deskCleared || '';
-    P('p_admin_comments').textContent= d.adminComments || '';
-    P('p_admin_status').textContent = currentRecord.history.find(h => h.by === 'Admin')?.action || 'Pending';
+  P('p_hr_email').textContent = d.hrFinalApproverEmail;
+  P('p_hr_comments').textContent = d.finalHrComments || '';
+  P('p_hr_status').textContent = currentRecord.status;
 
-    // Final HR
-    P('p_hr_email').textContent     = d.hrFinalApproverEmail || '';
-    P('p_hr_exp').textContent       = d.expLetter || '';
-    P('p_hr_exit').textContent      = d.exitInterview || '';
-    P('p_hr_comments').textContent  = d.finalHrComments || '';
-    P('p_hr_status').textContent    = currentRecord.status || '';
+  P('p_history').textContent = currentRecord.history
+    .map(h => `${new Date(h.at).toLocaleString()} | ${h.by}: ${h.action}\n${h.notes}`)
+    .join('\n\n');
 
-    // History
-    P('p_history').textContent = currentRecord.history
-      .map(h => `${fmtDT(h.at)} | ${h.by}: ${h.action}\n${h.notes}`)
-      .join("\n\n");
+  document.getElementById('printArea').hidden = false;
+  window.print();
+});
 
-    window.print();
-  });
 
   // ---------- Dashboard Table ----------
   const tbody = $('#requestsTable tbody');
@@ -521,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateApproverLabels({});
   renderTable();
 });
+
 
 
 
