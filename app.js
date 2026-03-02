@@ -163,6 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#hrFinalApproverEmail').value = rec.data.hrFinalApproverEmail;
     $('#assets').value = rec.data.assets || '';
     $('#comments').value = rec.data.comments || '';
+     // ALWAYS show full summary when opening from dashboard
+if (document.getElementById('printArea')) {
+  document.getElementById('printArea').hidden = false;
+}
+
 
     // Lock HR section (view-only after creation)
     Array.from($('#offboardingForm').elements).forEach(el => el.disabled = true);
@@ -511,6 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
   populateApproverLabels({});
   renderTable();
 });
+
 
 
 
