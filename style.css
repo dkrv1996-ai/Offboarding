@@ -78,3 +78,32 @@ th { position: sticky; top: 0; background: #0f172a; }
 
 .footer { padding: 16px; text-align: center; color: var(--muted); }
 @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.summary-table th {
+  width: 30%;
+  background: #f3f3f3;
+  color: #000;
+  text-align: left;
+  padding: 8px;
+}
+
+.summary-table td {
+  padding: 8px;
+  color: #000;
+}
+
+.summary-table th,
+.summary-table td {
+  border: 1px solid #aaa;
+}
+
+#printArea h2,
+#printArea h3 {
+  color: #000;
+}
+
