@@ -53,3 +53,19 @@ td span {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+@media print {
+
+  h2, h3, th {
+    color: #000 !important;
+  }
+
+  pre {
+    white-space: pre-wrap;
+  }
+
+  table {
+    page-break-inside: avoid;
+  }
+}
+
