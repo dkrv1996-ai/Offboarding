@@ -67,7 +67,13 @@ body {
 .table-wrap { overflow: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
-th { position: sticky; top: 0; background: #0f172a; }
+/* Sticky header ONLY for dashboard table */
+.table-wrap th {
+  position: sticky;
+  top: 0;
+  background: #0f172a;
+}
+
 .pill {
   padding: 2px 8px; border-radius: 999px; text-transform: capitalize;
   border: 1px solid var(--border);
@@ -106,4 +112,43 @@ th { position: sticky; top: 0; background: #0f172a; }
 #printArea h3 {
   color: #000;
 }
+
+/* Print summary table (screen-safe) */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.summary-table th {
+  width: 30%;
+  background: #f3f3f3;
+  color: #000;
+  text-align: left;
+  padding: 8px;
+}
+
+.summary-table td {
+  padding: 8px;
+  color: #000;
+}
+
+.summary-table th,
+.summary-table td {
+  border: 1px solid #aaa;
+}
+
+.summary-table pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+}
+
+/* Force print headings readable */
+#printArea h2,
+#printArea h3 {
+  color: #000;
+}
+
 
