@@ -518,17 +518,14 @@ if (document.getElementById('printArea')) {
     });
 
     // Wire "Open" buttons
+     
 tbody.querySelectorAll('button[data-open]').forEach(btn => {
   btn.addEventListener('click', () => {
     const id = btn.getAttribute('data-open');
     const rec = getOne(id);
     if (!rec) return;
 
-    // store currently opened record
-    currentRecord = rec;
-
-    // open summary view (dashboard → summary)
-    openSummary(rec);
+    openRecord(rec); // ✅ EXISTING & WORKING FUNCTION
   });
 });
 
@@ -564,6 +561,7 @@ renderTable();
 showDashboardView();
 
 });
+
 
 
 
