@@ -148,21 +148,53 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openRecord(rec) {
-    currentRecord = rec;
-    // Fill HR form and lock (read-only view when opening an existing request)
-    $('#employeeName').value = rec.data.employeeName;
-    $('#employeeId').value = rec.data.employeeId;
-    $('#department').value = rec.data.department;
-    $('#jobTitle').value = rec.data.jobTitle;
-    $('#lastWorkingDay').value = rec.data.lastWorkingDay;
-    $('#reason').value = rec.data.reason;
-    $('#lineManager').value = rec.data.lineManagerEmail;
-    $('#financeApproverEmail').value = rec.data.financeApproverEmail;
-    $('#itApproverEmail').value = rec.data.itApproverEmail;
-    $('#adminApproverEmail').value = rec.data.adminApproverEmail;
-    $('#hrFinalApproverEmail').value = rec.data.hrFinalApproverEmail;
-    $('#assets').value = rec.data.assets || '';
-    $('#comments').value = rec.data.comments || '';
+  currentRecord = rec;
+
+  // Fill HR form (read-only)
+  $('#employeeName').value = rec.data.employeeName;
+  $('#employeeId').value = rec.data.employeeId;
+  $('#department').value = rec.data.department;
+  $('#jobTitle').value = rec.data.jobTitle;
+  $('#lastWorkingDay').value = rec.data.lastWorkingDay;
+  $('#reason').value = rec.data.reason;
+  $('#lineManager').value = rec.data.lineManagerEmail;
+  $('#financeApproverEmail').value = rec.data.financeApproverEmail;
+  $('#itApproverEmail').value = rec.data.itApproverEmail;
+  $('#adminApproverEmail').value = rec.data.adminApproverEmail;
+  $('#hrFinalApproverEmail').value = rec.data.hrFinalApproverEmail;
+  $('#assets').value = rec.data.assets || '';
+  $('#comments').value = rec.data.comments || '';
+
+  // Lock form
+  Array.from($('#offboardingForm').elements).forEach(el => el.disabled = true);
+
+  $('#formMsg').textContent =
+    `Request ${rec.id} | Created: ${fmtDT(rec.createdAt)} | Status: ${rec.status}`;
+
+  populateApproverLabels(rec);
+  updateProgress(rec.currentStep);
+
+  // Hide all role sections
+  $$('.role-only').forEach(sec => sec.hidden = true);
+
+  // Show correct section OR summary
+  if (rec.status === 'completed' || rec.status === 'rejected') {
+    document.getElementById('printArea').hidden = false;
+  } else {
+    document.getElementById('printArea').hidden = true;
+
+    switch (steps[rec.currentStep]) {
+      case 'manager':  $('[data-role="manager"]').hidden = false; break;
+      case 'finance':  $('[data-role="finance"]').hidden = false; break;
+      case 'it':       $('[data-role="it"]').hidden = false; break;
+      case 'admin':    $('[data-role="admin"]').hidden = false; break;
+      case 'hr-final': $('[data-role="hr-final"]').hidden = false; break;
+    }
+  }
+
+  showNewView(); // move from dashboard → view page
+}
+
      // ALWAYS show full summary when opening from dashboard
 if (document.getElementById('printArea')) {
   document.getElementById('printArea').hidden = false;
@@ -486,7 +518,19 @@ if (document.getElementById('printArea')) {
     });
 
     // Wire "Open" buttons
+tbody.querySelectorAll('button[data-open]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.getAttribute('data-open');
+    const rec = getOne(id);
+    if (!rec) return;
 
+    // store currently opened record
+    currentRecord = rec;
+
+    // open summary view (dashboard → summary)
+    openSummary(rec);
+  });
+});
 
     // Wire "Delete" buttons
     tbody.querySelectorAll('button[data-del]').forEach(btn => {
@@ -516,6 +560,7 @@ if (document.getElementById('printArea')) {
   populateApproverLabels({});
   renderTable();
 });
+
 
 
 
