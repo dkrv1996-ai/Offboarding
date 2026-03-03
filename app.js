@@ -556,10 +556,15 @@ tbody.querySelectorAll('button[data-open]').forEach(btn => {
 
   // ---------- Initial UI ----------
   resetWorkflowUI();
-  updateProgress(0);
-  populateApproverLabels({});
-  renderTable();
+updateProgress(0);
+populateApproverLabels({});
+renderTable();
+
+// ✅ DEFAULT VIEW ON LOAD
+showDashboardView();
+
 });
+
 
 
 
